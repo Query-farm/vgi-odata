@@ -1,0 +1,99 @@
+# name: test/sql/odata_query.test
+# description: odata_query reads an entity set across paged responses
+# group: [vgi_odata]
+
+require-env VGI_ODATA_WORKER
+
+require-env VGI_ODATA_TEST_URL
+
+# haybarn-unittest does NOT autoload the extension for `require vgi` (it is
+# silently SKIPPED). Load it explicitly instead.
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'odata' AS odata (TYPE vgi, LOCATION '${VGI_ODATA_WORKER}');
+
+# ---- odata_query: all entities across both pages ----
+
+# The mock People set returns 4 entities across two pages (nextLink paging).
+query I
+SELECT count(*) FROM odata.odata_query('${VGI_ODATA_TEST_URL}', 'People');
+----
+4
+
+# seq is contiguous from 0..3.
+query I
+SELECT max(seq) - min(seq) FROM odata.odata_query('${VGI_ODATA_TEST_URL}', 'People');
+----
+3
+
+# Each row's `entity` is the raw JSON object. Assert on the raw string (no json
+# extension required) that a known entity from page 1 and page 2 are present.
+query I
+SELECT count(*) FROM odata.odata_query('${VGI_ODATA_TEST_URL}', 'People')
+WHERE entity LIKE '%russellwhyte%';
+----
+1
+
+query I
+SELECT count(*) FROM odata.odata_query('${VGI_ODATA_TEST_URL}', 'People')
+WHERE entity LIKE '%javieralfred%';
+----
+1
+
+# json_extract a field from the raw entity JSON. The json extension is not
+# autoloaded under haybarn, so load it explicitly first.
+statement ok
+INSTALL json;
+
+statement ok
+LOAD json;
+
+query T
+SELECT json_extract_string(entity, '$.FirstName') AS first
+FROM odata.odata_query('${VGI_ODATA_TEST_URL}', 'People')
+ORDER BY seq
+LIMIT 1;
+----
+Russell
+
+# ---- max_rows caps the result ----
+
+query I
+SELECT count(*) FROM odata.odata_query('${VGI_ODATA_TEST_URL}', 'People', max_rows := 3);
+----
+3
+
+# ---- $top / $select / $filter are accepted (passed through to the service) ----
+
+query I
+SELECT count(*) FROM odata.odata_query(
+  '${VGI_ODATA_TEST_URL}', 'People',
+  top := '50',
+  "select" := 'UserName,FirstName',
+  orderby := 'LastName');
+----
+4
+
+# ---- NULL input → no rows ----
+
+query I
+SELECT count(*) FROM odata.odata_query(NULL, 'People');
+----
+0
+
+query I
+SELECT count(*) FROM odata.odata_query('${VGI_ODATA_TEST_URL}', NULL);
+----
+0
+
+# ---- error: a bad / unreachable URL surfaces a clean error ----
+
+statement error
+SELECT * FROM odata.odata_query('not-a-valid-url', 'People');
+----
+
+statement error
+SELECT * FROM odata.odata_query('${VGI_ODATA_TEST_URL}', 'DoesNotExist');
+----

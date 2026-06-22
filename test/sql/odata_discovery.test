@@ -1,0 +1,56 @@
+# name: test/sql/odata_discovery.test
+# description: odata_entity_sets and odata_metadata against the mock service
+# group: [vgi_odata]
+
+require-env VGI_ODATA_WORKER
+
+require-env VGI_ODATA_TEST_URL
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'odata' AS odata (TYPE vgi, LOCATION '${VGI_ODATA_WORKER}');
+
+# ---- odata_entity_sets: lists the sets from the service document ----
+
+query T
+SELECT name FROM odata.odata_entity_sets('${VGI_ODATA_TEST_URL}') ORDER BY name;
+----
+People
+
+query I
+SELECT count(*) FROM odata.odata_entity_sets('${VGI_ODATA_TEST_URL}');
+----
+1
+
+# ---- odata_metadata: parses the EDMX into property rows ----
+
+# Person has three properties (UserName, FirstName, LastName).
+query I
+SELECT count(*) FROM odata.odata_metadata('${VGI_ODATA_TEST_URL}')
+WHERE entity_type = 'Person';
+----
+3
+
+query TTT
+SELECT entity_type, property, type
+FROM odata.odata_metadata('${VGI_ODATA_TEST_URL}')
+ORDER BY property;
+----
+Person	FirstName	Edm.String
+Person	LastName	Edm.String
+Person	UserName	Edm.String
+
+# ---- NULL → no rows ----
+
+query I
+SELECT count(*) FROM odata.odata_entity_sets(NULL);
+----
+0
+
+# ---- error: unreachable / bad URL ----
+
+statement error
+SELECT * FROM odata.odata_entity_sets('http://127.0.0.1:1/');
+----
