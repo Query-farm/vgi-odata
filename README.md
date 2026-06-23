@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="docs/vgi-logo.png" alt="Vector Gateway Interface (VGI)" width="320">
+</p>
+
+<p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
+
 # vgi-odata
 
 [![CI](https://github.com/Query-farm/vgi-odata/actions/workflows/ci.yml/badge.svg)](https://github.com/Query-farm/vgi-odata/actions/workflows/ci.yml)
@@ -161,3 +167,12 @@ runs the suite, and stops the mock.
   — plus the [`vgi-go`](https://github.com/Query-farm/vgi-go) SDK and Apache
   [arrow-go](https://github.com/apache/arrow-go) (**Apache-2.0**) for the VGI
   protocol and Arrow batches. See the `vgi-go` repo for its terms.
+
+---
+
+## Authorship & License
+
+Written by [Query.Farm](https://query.farm) — every VGI worker is designed and built by Query.Farm.
+
+Copyright 2026 Query Farm LLC - https://query.farm
+
