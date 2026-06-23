@@ -4,7 +4,9 @@
 
 <p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
 
-# vgi-odata
+# Query OData v2/v4 Services as Tables in DuckDB
+
+> **vgi-odata** · a [Query.Farm](https://query.farm) VGI worker
 
 [![CI](https://github.com/Query-farm/vgi-odata/actions/workflows/ci.yml/badge.svg)](https://github.com/Query-farm/vgi-odata/actions/workflows/ci.yml)
 
