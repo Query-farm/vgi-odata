@@ -67,12 +67,7 @@ vet:
 	go vet ./...
 
 lint:
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run ./...; \
-	else \
-		echo "golangci-lint not found; running go vet instead"; \
-		go vet ./...; \
-	fi
+	golangci-lint run
 
 clean:
 	rm -f $(WORKER_BIN) $(MOCK_BIN)
