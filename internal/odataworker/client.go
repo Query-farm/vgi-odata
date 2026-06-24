@@ -47,14 +47,23 @@ type Entity struct {
 // shorter-timeout / instrumented client if needed.
 var httpClient = &http.Client{Timeout: defaultTimeout}
 
-// doGET issues a GET to rawURL with an optional Bearer token and returns the
-// decoded body, surfacing a clear error for non-2xx responses.
+// doGET issues a GET to rawURL with an optional Bearer token, accepting JSON
+// (used for service documents and entity-set pages).
 func doGET(ctx context.Context, rawURL, token string) ([]byte, error) {
+	return doGETAccept(ctx, rawURL, token, "application/json")
+}
+
+// doGETAccept issues a GET to rawURL with an optional Bearer token and an
+// explicit Accept media type, returning the body and surfacing a clear error
+// for non-2xx responses. The $metadata (EDMX) endpoint is XML, so its caller
+// must ask for "application/xml"; spec-strict services (e.g. the public TripPin
+// reference service) return HTTP 415 if asked for JSON on that endpoint.
+func doGETAccept(ctx context.Context, rawURL, token, accept string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("odata: build request for %q: %w", rawURL, err)
 	}
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", accept)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -298,7 +307,9 @@ type edmxProperty struct {
 // at serviceURL, returning one row per (entity type, property).
 func Metadata(ctx context.Context, serviceURL, token string) ([]PropertyRow, error) {
 	metaURL := strings.TrimRight(serviceURL, "/") + "/$metadata"
-	body, err := doGET(ctx, metaURL, token)
+	// $metadata is an EDMX *XML* document; ask for XML so spec-strict services
+	// don't reject the request with HTTP 415 (as TripPin does for Accept: json).
+	body, err := doGETAccept(ctx, metaURL, token, "application/xml")
 	if err != nil {
 		return nil, err
 	}

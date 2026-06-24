@@ -128,6 +128,32 @@ func TestMetadata(t *testing.T) {
 	}
 }
 
+// TestMetadataRequestsXML guards the regression where $metadata was requested
+// with Accept: application/json — spec-strict services (e.g. the public TripPin
+// reference service) answer the EDMX/XML endpoint with HTTP 415 in that case.
+func TestMetadataRequestsXML(t *testing.T) {
+	var gotAccept string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAccept = r.Header.Get("Accept")
+		w.Header().Set("Content-Type", "application/xml")
+		_, _ = w.Write([]byte(`<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema Namespace="M" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <EntityType Name="Person"><Property Name="UserName" Type="Edm.String"/></EntityType>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>`))
+	}))
+	defer ts.Close()
+	if _, err := Metadata(context.Background(), ts.URL, ""); err != nil {
+		t.Fatalf("Metadata: %v", err)
+	}
+	if gotAccept != "application/xml" {
+		t.Errorf("$metadata Accept header = %q, want application/xml", gotAccept)
+	}
+}
+
 // --- v2-shape handling -----------------------------------------------------
 
 // TestQueryV2Shape exercises the OData v2 response shape: results under

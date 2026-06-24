@@ -15,6 +15,25 @@ import (
 	"github.com/Query-farm/vgi-odata/internal/odataworker"
 )
 
+// odataExecutableExamples is the catalog's vgi.executable_examples tag (VGI509):
+// a JSON list of {"description","sql"} objects whose SQL is catalog-qualified and
+// self-contained. They run against Microsoft's public, auth-free TripPin OData v4
+// reference service (services.odata.org).
+const odataExecutableExamples = `[
+  {
+    "description": "Discover the entity sets the TripPin OData service exposes.",
+    "sql": "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name"
+  },
+  {
+    "description": "Read the first 5 People entities and pull a field out of the raw JSON.",
+    "sql": "SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5') ORDER BY seq"
+  },
+  {
+    "description": "Inspect the properties and EDM types of the Person entity type from $metadata.",
+    "sql": "SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person' ORDER BY property"
+  }
+]`
+
 func main() {
 	// Accept --http for HTTP transport and --unix for the AF_UNIX launcher
 	// transport; default is stdio. Unknown launcher flags are tolerated (the
@@ -38,7 +57,11 @@ func main() {
 		vgi.WithCatalogName(odataworker.CatalogName),
 		vgi.WithCatalogComment("Query OData v2/v4 services and return their entities as rows"),
 		vgi.WithCatalogTags(map[string]string{
-			"source": "vgi-odata",
+			"source":    "vgi-odata",
+			"vgi.title": "OData v2/v4 Reader",
+			"vgi.keywords": "odata, odata reader, rest, json, http, entity set, $metadata, edmx, " +
+				"nextlink paging, $filter, $select, $orderby, $top, dynamics 365, dataverse, " +
+				"sap gateway, s/4hana, netweaver, enterprise api, bearer token",
 			"vgi.description_llm": "Read data from OData v2/v4 REST services directly in SQL. " +
 				"OData is the JSON/REST protocol behind Microsoft Dynamics 365 / Dataverse, " +
 				"SAP Gateway (S/4HANA, NetWeaver), and many enterprise APIs, so this is a " +
@@ -63,6 +86,11 @@ func main() {
 			"vgi.license":            "MIT",
 			"vgi.support_contact":    "https://github.com/Query-farm/vgi-odata/issues",
 			"vgi.support_policy_url": "https://github.com/Query-farm/vgi-odata/blob/main/README.md",
+			// VGI509: at least one guaranteed-runnable, catalog-qualified example.
+			// These run against Microsoft's public TripPin OData v4 reference
+			// service (services.odata.org), which has no auth and is the canonical
+			// OData test service.
+			"vgi.executable_examples": odataExecutableExamples,
 		}),
 		vgi.WithCatalogInfo(vgi.CatalogInfo{
 			Name:      odataworker.CatalogName,
@@ -73,6 +101,20 @@ func main() {
 		}),
 		vgi.WithSchemaTags(map[string]map[string]string{
 			"main": {
+				"vgi.title": "OData Read Functions",
+				"vgi.keywords": "odata, entity sets, odata_query, odata_entity_sets, odata_metadata, " +
+					"rest, json, http, paging, nextlink, $filter, $select, $orderby, $top, edmx, " +
+					"discovery, dynamics, dataverse, sap gateway",
+				"vgi.source_url": "https://github.com/Query-farm/vgi-odata/blob/main/internal/odataworker/functions.go",
+				// VGI123 classifying tags use BARE keys (not vgi.-namespaced).
+				"domain":   "enterprise-data",
+				"category": "data-integration",
+				"topic":    "odata-rest-api",
+				// VGI506 representative example queries for the schema (plain string,
+				// catalog-qualified SQL).
+				"vgi.example_queries": "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;\n" +
+					"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');\n" +
+					"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';",
 				"vgi.description_llm": "OData read functions: list a service's entity sets, read an " +
 					"entity set as rows of raw JSON (with $filter/$select/$orderby/$top and nextLink " +
 					"paging), and parse an entity type's properties and types from $metadata/EDMX.",

@@ -106,12 +106,26 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 		Description: "Read an OData entity set; one row per entity (raw JSON), following nextLink paging",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"odata", "http"},
-		Tags: map[string]string{
+		Tags: withTags(objectTags(
+			"OData Entity-Set Reader",
+			"Read an OData v2/v4 entity set and return one row per entity as raw JSON, following "+
+				"@odata.nextLink (v4) or d.__next (v2) paging until exhausted or max_rows. Push "+
+				"$filter/$select/$orderby/$top down to the service as system query options, and "+
+				"authenticate with an optional bearer token. Project fields out of the JSON with "+
+				"DuckDB's json_extract / json_extract_string. Use to query entity data from "+
+				"Dynamics 365 / Dataverse, SAP Gateway, or any spec-compliant OData service.",
+			"Read an OData entity set as rows of raw JSON, paging automatically and pushing down "+
+				"`$filter`/`$select`/`$orderby`/`$top`. Returns `seq` (position) and `entity` "+
+				"(raw JSON); project fields with `json_extract_string`.",
+			"odata, odata query, read entity set, rest, json, http, paging, nextlink, filter, "+
+				"select, orderby, top, dynamics, dataverse, sap gateway, bearer token",
+			"internal/odataworker/functions.go",
+		), map[string]string{
 			"vgi.columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `seq` | BIGINT | 0-based position of the entity across all fetched pages. |\n" +
 				"| `entity` | VARCHAR | The entity as its raw JSON object text; project fields with `json_extract` / `json_extract_string`. |",
-		},
+		}),
 		Examples: []vgi.CatalogExample{
 			{
 				SQL: "SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name " +
@@ -200,11 +214,23 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 		Description: "List the entity sets exposed by an OData service (from its service document)",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"odata", "discovery"},
-		Tags: map[string]string{
+		Tags: withTags(objectTags(
+			"OData Entity-Set Catalog",
+			"List the entity sets a given OData v2/v4 service exposes, read from its top-level "+
+				"service document (the JSON value[] array). Returns one row per entity-set name; "+
+				"feed any of those names as the entity_set argument to odata_query. Use this first "+
+				"to discover what a service offers (People, Airlines, Orders, ...) before reading "+
+				"data. Supports an optional bearer token for protected services.",
+			"List the entity sets advertised by an OData service's service document. Returns one "+
+				"`name` row per entity set; pass a name to `odata_query` to read its data.",
+			"odata, entity sets, service document, discovery, list, catalog, metadata, rest, "+
+				"json, schema discovery, dynamics, sap gateway",
+			"internal/odataworker/functions.go",
+		), map[string]string{
 			"vgi.columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `name` | VARCHAR | Name of an entity set advertised in the service document; pass it as the `entity_set` argument to `odata_query`. |",
-		},
+		}),
 		Examples: []vgi.CatalogExample{
 			{
 				SQL:         "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;",
@@ -287,13 +313,27 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 		Description: "Parse an OData service's $metadata (EDMX XML); one row per entity-type property",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"odata", "discovery"},
-		Tags: map[string]string{
+		Tags: withTags(objectTags(
+			"OData $metadata Schema Inspector",
+			"Parse an OData service's $metadata (EDMX XML) document and return one row per "+
+				"entity-type property: the entity type name, the property name, and the property's "+
+				"EDM type (e.g. Edm.String, Edm.Int32, Edm.DateTimeOffset). Parsing is "+
+				"namespace-agnostic, so it handles both EDM 3.0 (OData v2) and EDM 4.0 (OData v4). "+
+				"Use it to learn the shape and column types of an entity before querying it. "+
+				"Supports an optional bearer token for protected services.",
+			"Parse a service's `$metadata` (EDMX) into one row per entity-type property "+
+				"(`entity_type`, `property`, `type`). Works for both OData v2 (EDM 3.0) and v4 "+
+				"(EDM 4.0) documents.",
+			"odata, metadata, edmx, edm, schema, entity type, property, type, csdl, discovery, "+
+				"introspection, data dictionary, dynamics, sap gateway",
+			"internal/odataworker/functions.go",
+		), map[string]string{
 			"vgi.columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `entity_type` | VARCHAR | Name of the EDM entity type the property belongs to. |\n" +
 				"| `property` | VARCHAR | Name of a property declared on that entity type. |\n" +
 				"| `type` | VARCHAR | The property's EDM type, e.g. `Edm.String`, `Edm.Int32`, `Edm.DateTimeOffset`. |",
-		},
+		}),
 		Examples: []vgi.CatalogExample{
 			{
 				SQL: "SELECT property, type FROM odata.main.odata_metadata(" +
