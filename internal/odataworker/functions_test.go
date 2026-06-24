@@ -3,6 +3,8 @@
 package odataworker
 
 import (
+	"bytes"
+	"encoding/gob"
 	"testing"
 
 	"github.com/Query-farm/vgi-go/vgi"
@@ -45,8 +47,8 @@ func TestQueryNewStateData(t *testing.T) {
 	if len(st.Entities) == 0 {
 		t.Fatal("expected entities from NewState")
 	}
-	if st.Done {
-		t.Error("state should not be marked done before Process")
+	if st.Offset != 0 {
+		t.Error("state cursor should start at offset 0 before Process")
 	}
 }
 
@@ -89,6 +91,38 @@ func TestMetadataNewStateData(t *testing.T) {
 	if len(st.Rows) != 3 {
 		t.Fatalf("expected 3 property rows, got %d", len(st.Rows))
 	}
+}
+
+// TestCursorSurvivesContinuation mirrors the HTTP transport: the per-scan state
+// is gob round-tripped between ticks, so the cursor offset must advance across
+// the boundary and eventually drain. A bare Done flag flipped after Emit would
+// not survive this (it would re-emit row 0 forever); an explicit Offset does.
+func TestCursorSurvivesContinuation(t *testing.T) {
+	rows := make([]Entity, rowsPerTick*2+5) // spans 3 ticks
+	st := &queryState{Entities: rows}
+	emitted := 0
+	for tick := 0; tick < 100; tick++ {
+		// Snapshot the live state through gob (as the HTTP framework does), then
+		// resume from the decoded copy.
+		var buf bytes.Buffer
+		if err := gob.NewEncoder(&buf).Encode(st); err != nil {
+			t.Fatalf("gob encode: %v", err)
+		}
+		var resumed queryState
+		if err := gob.NewDecoder(&buf).Decode(&resumed); err != nil {
+			t.Fatalf("gob decode: %v", err)
+		}
+		st = &resumed
+		slice, done := cursorSlice(st.Entities, &st.Offset)
+		if done {
+			if emitted != len(rows) {
+				t.Fatalf("drained after emitting %d of %d rows", emitted, len(rows))
+			}
+			return
+		}
+		emitted += len(slice)
+	}
+	t.Fatal("cursor never drained — continuation loop did not terminate")
 }
 
 func TestRegisterDoesNotPanic(t *testing.T) {

@@ -16,9 +16,42 @@ import (
 // EXPORTED, gob-encodable fields only — no arrow.Record, no interfaces/chans/
 // funcs, no unexported fields. Each function fetches its rows eagerly in
 // NewState, stores them as plain Go slices, and rebuilds the Arrow batch in
-// Process. The Done field is exported so gob can round-trip it.
-type emitState struct {
-	Done bool
+// Process.
+//
+// WHY AN EXPLICIT CURSOR, NOT A bool Done (the HTTP-continuation fix):
+//
+// Over the HTTP transport the worker is STATELESS across exchanges — there is no
+// long-lived process holding the live state between Process ticks. Instead the
+// framework round-trips the producer state through an opaque continuation token:
+// after each tick it gob-encodes the state (snapshotting the LIVE user state),
+// the client returns the token, and the worker resumes by gob-decoding it. The
+// HTTP server emits at most one data batch per response, so a producer that has
+// more to emit is always resumed mid-stream from its token.
+//
+// The position MUST therefore live in the serialized state. A bare `Done bool`
+// flipped only AFTER the single Emit does not survive the continuation boundary:
+// the resumed tick observes the pre-Emit snapshot, re-emits the same rows, and
+// the scan never terminates (an infinite loop — subprocess/unix keep live state
+// in memory, so they were unaffected and hid the bug). Carrying an explicit
+// Offset that Process advances BEFORE yielding makes the snapshot authoritative.
+//
+// rowsPerTick bounds how many rows each Process tick emits, so the cursor is
+// observable across the continuation boundary (and scales to large results).
+const rowsPerTick = 256
+
+// cursorSlice returns the next bounded slice of rows starting at *offset and
+// advances *offset past them, reporting done=true once all rows are consumed.
+func cursorSlice[T any](rows []T, offset *int) (slice []T, done bool) {
+	if *offset >= len(rows) {
+		return nil, true
+	}
+	end := *offset + rowsPerTick
+	if end > len(rows) {
+		end = len(rows)
+	}
+	slice = rows[*offset:end]
+	*offset = end
+	return slice, false
 }
 
 // optsFrom assembles QueryOptions from the bound arguments.
@@ -55,10 +88,10 @@ type queryArgs struct {
 	Version    string `vgi:"name=version,default=v4,doc=OData response shape: 'v4' (value/@odata.nextLink) or 'v2' (d.results/d.__next)"`
 }
 
-// queryState holds the fetched entities (gob-encodable) plus the emit flag.
+// queryState holds the fetched entities (gob-encodable) plus the cursor offset.
 type queryState struct {
-	emitState
 	Entities []Entity
+	Offset   int
 }
 
 // QueryFunction reads an OData entity set as rows of raw JSON.
@@ -99,11 +132,10 @@ func (f *QueryFunction) NewState(params *vgi.ProcessParams) (*queryState, error)
 }
 
 func (f *QueryFunction) Process(_ context.Context, _ *vgi.ProcessParams, state *queryState, out *vgirpc.OutputCollector) error {
-	if state.Done {
+	e, done := cursorSlice(state.Entities, &state.Offset)
+	if done {
 		return out.Finish()
 	}
-	state.Done = true
-	e := state.Entities
 	n := int64(len(e))
 	batch := array.NewRecordBatch(querySchema, []arrow.Array{
 		vgi.BuildInt64Array(n, func(i int64) int64 { return e[i].Seq }),
@@ -131,10 +163,10 @@ type entitySetsArgs struct {
 	Token      string `vgi:"name=token,default=,doc=Bearer token (Authorization: Bearer <token>)"`
 }
 
-// entitySetsState holds the discovered entity-set names plus the emit flag.
+// entitySetsState holds the discovered entity-set names plus the cursor offset.
 type entitySetsState struct {
-	emitState
-	Names []string
+	Names  []string
+	Offset int
 }
 
 // EntitySetsFunction lists the entity sets of a service from its service doc.
@@ -176,12 +208,12 @@ func (f *EntitySetsFunction) NewState(params *vgi.ProcessParams) (*entitySetsSta
 }
 
 func (f *EntitySetsFunction) Process(_ context.Context, _ *vgi.ProcessParams, state *entitySetsState, out *vgirpc.OutputCollector) error {
-	if state.Done {
+	names, done := cursorSlice(state.Names, &state.Offset)
+	if done {
 		return out.Finish()
 	}
-	state.Done = true
-	n := int64(len(state.Names))
-	col := vgi.BuildStringArray(n, func(i int64) string { return state.Names[i] })
+	n := int64(len(names))
+	col := vgi.BuildStringArray(n, func(i int64) string { return names[i] })
 	batch := array.NewRecordBatch(entitySetsSchema, []arrow.Array{col}, n)
 	defer batch.Release()
 	return out.Emit(batch)
@@ -207,10 +239,10 @@ type metadataArgs struct {
 	Token      string `vgi:"name=token,default=,doc=Bearer token (Authorization: Bearer <token>)"`
 }
 
-// metadataState holds the parsed property rows plus the emit flag.
+// metadataState holds the parsed property rows plus the cursor offset.
 type metadataState struct {
-	emitState
-	Rows []PropertyRow
+	Rows   []PropertyRow
+	Offset int
 }
 
 // MetadataFunction parses $metadata (EDMX) into property rows.
@@ -252,11 +284,10 @@ func (f *MetadataFunction) NewState(params *vgi.ProcessParams) (*metadataState, 
 }
 
 func (f *MetadataFunction) Process(_ context.Context, _ *vgi.ProcessParams, state *metadataState, out *vgirpc.OutputCollector) error {
-	if state.Done {
+	r, done := cursorSlice(state.Rows, &state.Offset)
+	if done {
 		return out.Finish()
 	}
-	state.Done = true
-	r := state.Rows
 	n := int64(len(r))
 	batch := array.NewRecordBatch(metadataSchema, []arrow.Array{
 		vgi.BuildStringArray(n, func(i int64) string { return r[i].EntityType }),
