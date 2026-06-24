@@ -106,6 +106,25 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 		Description: "Read an OData entity set; one row per entity (raw JSON), following nextLink paging",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"odata", "http"},
+		Tags: map[string]string{
+			"vgi.columns_md": "| column | type | description |\n" +
+				"|---|---|---|\n" +
+				"| `seq` | BIGINT | 0-based position of the entity across all fetched pages. |\n" +
+				"| `entity` | VARCHAR | The entity as its raw JSON object text; project fields with `json_extract` / `json_extract_string`. |",
+		},
+		Examples: []vgi.CatalogExample{
+			{
+				SQL: "SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name " +
+					"FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');",
+				Description: "Read the first 5 People entities from the public TripPin OData v4 service and pull a field out of the raw JSON.",
+			},
+			{
+				SQL: "SELECT count(*) FROM odata.main.odata_query(" +
+					"'https://services.odata.org/V4/TripPinService', 'People', " +
+					"\"filter\" := 'FirstName eq ''Russell''', max_rows := 1000);",
+				Description: "Count People named Russell, pushing the predicate down to the service via the OData $filter option.",
+			},
+		},
 	}
 }
 
@@ -181,6 +200,17 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 		Description: "List the entity sets exposed by an OData service (from its service document)",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"odata", "discovery"},
+		Tags: map[string]string{
+			"vgi.columns_md": "| column | type | description |\n" +
+				"|---|---|---|\n" +
+				"| `name` | VARCHAR | Name of an entity set advertised in the service document; pass it as the `entity_set` argument to `odata_query`. |",
+		},
+		Examples: []vgi.CatalogExample{
+			{
+				SQL:         "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;",
+				Description: "Discover every entity set the TripPin OData service exposes (People, Airlines, Airports, ...).",
+			},
+		},
 	}
 }
 
@@ -257,6 +287,20 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 		Description: "Parse an OData service's $metadata (EDMX XML); one row per entity-type property",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"odata", "discovery"},
+		Tags: map[string]string{
+			"vgi.columns_md": "| column | type | description |\n" +
+				"|---|---|---|\n" +
+				"| `entity_type` | VARCHAR | Name of the EDM entity type the property belongs to. |\n" +
+				"| `property` | VARCHAR | Name of a property declared on that entity type. |\n" +
+				"| `type` | VARCHAR | The property's EDM type, e.g. `Edm.String`, `Edm.Int32`, `Edm.DateTimeOffset`. |",
+		},
+		Examples: []vgi.CatalogExample{
+			{
+				SQL: "SELECT property, type FROM odata.main.odata_metadata(" +
+					"'https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';",
+				Description: "Inspect the properties and EDM types of the Person entity type from the service's $metadata (EDMX) document.",
+			},
+		},
 	}
 }
 
