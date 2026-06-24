@@ -62,7 +62,7 @@ func main() {
 			"vgi.keywords": "odata, odata reader, rest, json, http, entity set, $metadata, edmx, " +
 				"nextlink paging, $filter, $select, $orderby, $top, dynamics 365, dataverse, " +
 				"sap gateway, s/4hana, netweaver, enterprise api, bearer token",
-			"vgi.description_llm": "Read data from OData v2/v4 REST services directly in SQL. " +
+			"vgi.doc_llm": "Read data from OData v2/v4 REST services directly in SQL. " +
 				"OData is the JSON/REST protocol behind Microsoft Dynamics 365 / Dataverse, " +
 				"SAP Gateway (S/4HANA, NetWeaver), and many enterprise APIs, so this is a " +
 				"generic OData reader rather than a vendor-specific connector. Use it to " +
@@ -71,7 +71,7 @@ func main() {
 				"$orderby/$top pushdown (odata_query), and inspect an entity type's properties " +
 				"and types from its $metadata/EDMX document (odata_metadata). Supports bearer-" +
 				"token auth and both v4 (value/@odata.nextLink) and v2 (d.results/d.__next) shapes.",
-			"vgi.description_md": "# odata\n\n" +
+			"vgi.doc_md": "# odata\n\n" +
 				"Query **OData v2/v4** services from DuckDB/SQL and return their entities as rows.\n\n" +
 				"A generic OData reader over Apache Arrow — works against TripPin, Northwind, " +
 				"Microsoft Dynamics / Dataverse, SAP Gateway, or any spec-compliant OData service.\n\n" +
@@ -115,11 +115,27 @@ func main() {
 				"vgi.example_queries": "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;\n" +
 					"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');\n" +
 					"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';",
-				"vgi.description_llm": "OData read functions: list a service's entity sets, read an " +
-					"entity set as rows of raw JSON (with $filter/$select/$orderby/$top and nextLink " +
-					"paging), and parse an entity type's properties and types from $metadata/EDMX.",
-				"vgi.description_md": "OData v2/v4 read functions over Apache Arrow: " +
-					"`odata_entity_sets`, `odata_query`, and `odata_metadata`.",
+				"vgi.doc_llm": "The `main` schema groups the three OData read functions. A typical " +
+					"workflow is: call `odata_entity_sets(service_url)` to discover what an OData service " +
+					"exposes, optionally `odata_metadata(service_url)` to learn an entity type's " +
+					"properties and EDM types, then `odata_query(service_url, entity_set, ...)` to read " +
+					"the data as rows of raw JSON with `$filter`/`$select`/`$orderby`/`$top` pushdown and " +
+					"automatic nextLink paging. All three accept an optional bearer token and work " +
+					"against both OData v4 (value/@odata.nextLink) and v2 (d.results/d.__next) services.",
+				"vgi.doc_md": "## OData read functions\n\n" +
+					"Functions for reading **OData v2/v4** services from SQL over Apache Arrow.\n\n" +
+					"### Functions\n\n" +
+					"- **`odata_entity_sets(service_url)`** — list the entity sets a service advertises " +
+					"in its service document.\n" +
+					"- **`odata_query(service_url, entity_set, ...)`** — read an entity set; one row per " +
+					"entity as raw JSON, following nextLink paging with `$filter`/`$select`/`$orderby`/" +
+					"`$top` pushdown.\n" +
+					"- **`odata_metadata(service_url)`** — parse `$metadata` (EDMX) into one row per " +
+					"entity-type property.\n\n" +
+					"### Notes\n\n" +
+					"Start with `odata_entity_sets` to discover a service, then `odata_query` to read " +
+					"rows; project JSON fields with `json_extract_string`. All functions accept an " +
+					"optional bearer token for protected services.",
 			},
 		}),
 	)

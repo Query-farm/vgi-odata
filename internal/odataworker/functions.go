@@ -114,14 +114,30 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 				"authenticate with an optional bearer token. Project fields out of the JSON with "+
 				"DuckDB's json_extract / json_extract_string. Use to query entity data from "+
 				"Dynamics 365 / Dataverse, SAP Gateway, or any spec-compliant OData service.",
-			"Read an OData entity set as rows of raw JSON, paging automatically and pushing down "+
-				"`$filter`/`$select`/`$orderby`/`$top`. Returns `seq` (position) and `entity` "+
-				"(raw JSON); project fields with `json_extract_string`.",
+			"## odata_query\n\n"+
+				"Read an **OData v2/v4 entity set** as rows of raw JSON.\n\n"+
+				"### Overview\n\n"+
+				"Fetches an entity set from an OData service and returns one row per entity, "+
+				"following `@odata.nextLink` (v4) or `d.__next` (v2) paging automatically until the "+
+				"set is exhausted or `max_rows` is reached.\n\n"+
+				"### Usage\n\n"+
+				"```sql\n"+
+				"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name\n"+
+				"FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');\n"+
+				"```\n\n"+
+				"Returns `seq` (0-based position) and `entity` (the entity's raw JSON text). Project "+
+				"fields with DuckDB's `json_extract` / `json_extract_string`.\n\n"+
+				"### Notes\n\n"+
+				"- Push `$filter`/`$select`/`$orderby`/`$top` down to the service with the matching "+
+				"named arguments; `\"filter\"` and `\"select\"` must be quoted (SQL keywords).\n"+
+				"- Pass `version := 'v2'` for OData v2 services and `token := '<bearer>'` for "+
+				"protected services.\n"+
+				"- A NULL `service_url` or `entity_set` yields zero rows rather than an error.",
 			"odata, odata query, read entity set, rest, json, http, paging, nextlink, filter, "+
 				"select, orderby, top, dynamics, dataverse, sap gateway, bearer token",
 			"internal/odataworker/functions.go",
 		), map[string]string{
-			"vgi.columns_md": "| column | type | description |\n" +
+			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `seq` | BIGINT | 0-based position of the entity across all fetched pages. |\n" +
 				"| `entity` | VARCHAR | The entity as its raw JSON object text; project fields with `json_extract` / `json_extract_string`. |",
@@ -221,13 +237,29 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 				"feed any of those names as the entity_set argument to odata_query. Use this first "+
 				"to discover what a service offers (People, Airlines, Orders, ...) before reading "+
 				"data. Supports an optional bearer token for protected services.",
-			"List the entity sets advertised by an OData service's service document. Returns one "+
-				"`name` row per entity set; pass a name to `odata_query` to read its data.",
+			"## odata_entity_sets\n\n"+
+				"List the **entity sets** an OData service exposes.\n\n"+
+				"### Overview\n\n"+
+				"Reads the service's top-level service document (the JSON `value[]` array) and "+
+				"returns one row per entity-set name. This is the natural first step when exploring "+
+				"an unfamiliar OData service.\n\n"+
+				"### Usage\n\n"+
+				"```sql\n"+
+				"SELECT name\n"+
+				"FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService')\n"+
+				"ORDER BY name;\n"+
+				"```\n\n"+
+				"Feed any returned `name` into `odata_query` as the `entity_set` argument to read its "+
+				"rows.\n\n"+
+				"### Notes\n\n"+
+				"- Works against OData v2 and v4 service documents.\n"+
+				"- Pass `token := '<bearer>'` for protected services; a NULL `service_url` yields zero "+
+				"rows.",
 			"odata, entity sets, service document, discovery, list, catalog, metadata, rest, "+
 				"json, schema discovery, dynamics, sap gateway",
 			"internal/odataworker/functions.go",
 		), map[string]string{
-			"vgi.columns_md": "| column | type | description |\n" +
+			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `name` | VARCHAR | Name of an entity set advertised in the service document; pass it as the `entity_set` argument to `odata_query`. |",
 		}),
@@ -321,14 +353,29 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 				"namespace-agnostic, so it handles both EDM 3.0 (OData v2) and EDM 4.0 (OData v4). "+
 				"Use it to learn the shape and column types of an entity before querying it. "+
 				"Supports an optional bearer token for protected services.",
-			"Parse a service's `$metadata` (EDMX) into one row per entity-type property "+
-				"(`entity_type`, `property`, `type`). Works for both OData v2 (EDM 3.0) and v4 "+
-				"(EDM 4.0) documents.",
+			"## odata_metadata\n\n"+
+				"Inspect an OData service's **`$metadata` (EDMX) schema**.\n\n"+
+				"### Overview\n\n"+
+				"Fetches and parses the service's `$metadata` (EDMX/CSDL) document and returns one "+
+				"row per entity-type property: the entity type name, the property name, and the "+
+				"property's EDM type. Use it to learn the shape and column types of an entity before "+
+				"querying it with `odata_query`.\n\n"+
+				"### Usage\n\n"+
+				"```sql\n"+
+				"SELECT property, type\n"+
+				"FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService')\n"+
+				"WHERE entity_type = 'Person';\n"+
+				"```\n\n"+
+				"### Notes\n\n"+
+				"- Parsing is namespace-agnostic, so both OData v2 (EDM 3.0) and v4 (EDM 4.0) "+
+				"documents are supported.\n"+
+				"- Pass `token := '<bearer>'` for protected services; a NULL `service_url` yields zero "+
+				"rows.",
 			"odata, metadata, edmx, edm, schema, entity type, property, type, csdl, discovery, "+
 				"introspection, data dictionary, dynamics, sap gateway",
 			"internal/odataworker/functions.go",
 		), map[string]string{
-			"vgi.columns_md": "| column | type | description |\n" +
+			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `entity_type` | VARCHAR | Name of the EDM entity type the property belongs to. |\n" +
 				"| `property` | VARCHAR | Name of a property declared on that entity type. |\n" +

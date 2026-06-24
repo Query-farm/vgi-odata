@@ -6,11 +6,11 @@ package odataworker
 // vgi-lint strict profile expects on EVERY function (and on the catalog and
 // schema). Each function surfaces these in its FunctionMetadata.Tags:
 //
-//   - vgi.title           (VGI124) — human-friendly display name
-//   - vgi.description_llm (VGI112) — concise prose aimed at LLMs
-//   - vgi.description_md  (VGI113) — short Markdown description
-//   - vgi.keywords        (VGI126) — comma-separated search terms/synonyms
-//   - vgi.source_url      (VGI128) — link to the implementing source file
+//   - vgi.title       (VGI124) — human-friendly display name
+//   - vgi.doc_llm     (VGI112) — Markdown narrative aimed at LLMs/agents
+//   - vgi.doc_md      (VGI113) — Markdown narrative aimed at human docs
+//   - vgi.keywords    (VGI126) — comma-separated search terms/synonyms
+//   - vgi.source_url  (VGI128) — link to the implementing source file
 //
 // sourceURL(file) builds the canonical GitHub blob URL for a source file so
 // every object points at exactly where it is implemented.
@@ -27,18 +27,18 @@ func sourceURL(relativePath string) string {
 
 // objectTags returns the five standard per-object discovery/description tags.
 // relativePath is the implementing file relative to the repo root.
-func objectTags(title, descriptionLLM, descriptionMD, keywords, relativePath string) map[string]string {
+func objectTags(title, docLLM, docMD, keywords, relativePath string) map[string]string {
 	return map[string]string{
-		"vgi.title":           title,
-		"vgi.description_llm": descriptionLLM,
-		"vgi.description_md":  descriptionMD,
-		"vgi.keywords":        keywords,
-		"vgi.source_url":      sourceURL(relativePath),
+		"vgi.title":      title,
+		"vgi.doc_llm":    docLLM,
+		"vgi.doc_md":     docMD,
+		"vgi.keywords":   keywords,
+		"vgi.source_url": sourceURL(relativePath),
 	}
 }
 
 // withTags merges the standard object tags with any extra function-specific
-// tags (e.g. vgi.columns_md), returning a fresh map.
+// tags (e.g. vgi.result_columns_md), returning a fresh map.
 func withTags(base map[string]string, extra map[string]string) map[string]string {
 	out := make(map[string]string, len(base)+len(extra))
 	for k, v := range base {
