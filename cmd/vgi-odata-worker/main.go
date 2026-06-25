@@ -59,9 +59,11 @@ func main() {
 		vgi.WithCatalogTags(map[string]string{
 			"source":    "vgi-odata",
 			"vgi.title": "OData v2/v4 Reader",
-			"vgi.keywords": "odata, odata reader, rest, json, http, entity set, $metadata, edmx, " +
-				"nextlink paging, $filter, $select, $orderby, $top, dynamics 365, dataverse, " +
-				"sap gateway, s/4hana, netweaver, enterprise api, bearer token",
+			// VGI138: vgi.keywords must be a JSON array of strings.
+			"vgi.keywords": `["odata","odata reader","rest","json","http","entity set",` +
+				`"$metadata","edmx","nextlink paging","$filter","$select","$orderby","$top",` +
+				`"dynamics 365","dataverse","sap gateway","s/4hana","netweaver",` +
+				`"enterprise api","bearer token"]`,
 			"vgi.doc_llm": "Read data from OData v2/v4 REST services directly in SQL. " +
 				"OData is the JSON/REST protocol behind Microsoft Dynamics 365 / Dataverse, " +
 				"SAP Gateway (S/4HANA, NetWeaver), and many enterprise APIs, so this is a " +
@@ -102,10 +104,12 @@ func main() {
 		vgi.WithSchemaTags(map[string]map[string]string{
 			"main": {
 				"vgi.title": "OData Read Functions",
-				"vgi.keywords": "odata, entity sets, odata_query, odata_entity_sets, odata_metadata, " +
-					"rest, json, http, paging, nextlink, $filter, $select, $orderby, $top, edmx, " +
-					"discovery, dynamics, dataverse, sap gateway",
-				"vgi.source_url": "https://github.com/Query-farm/vgi-odata/blob/main/internal/odataworker/functions.go",
+				// VGI138: vgi.keywords must be a JSON array of strings.
+				"vgi.keywords": `["odata","entity sets","odata_query","odata_entity_sets",` +
+					`"odata_metadata","rest","json","http","paging","nextlink","$filter",` +
+					`"$select","$orderby","$top","edmx","discovery","dynamics","dataverse",` +
+					`"sap gateway"]`,
+				// VGI139: vgi.source_url belongs only on the catalog, not per-object.
 				// VGI123 classifying tags use BARE keys (not vgi.-namespaced).
 				"domain":   "enterprise-data",
 				"category": "data-integration",

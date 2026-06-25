@@ -135,7 +135,6 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 				"- A NULL `service_url` or `entity_set` yields zero rows rather than an error.",
 			"odata, odata query, read entity set, rest, json, http, paging, nextlink, filter, "+
 				"select, orderby, top, dynamics, dataverse, sap gateway, bearer token",
-			"internal/odataworker/functions.go",
 		), map[string]string{
 			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
@@ -257,7 +256,6 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 				"rows.",
 			"odata, entity sets, service document, discovery, list, catalog, metadata, rest, "+
 				"json, schema discovery, dynamics, sap gateway",
-			"internal/odataworker/functions.go",
 		), map[string]string{
 			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
@@ -373,7 +371,6 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 				"rows.",
 			"odata, metadata, edmx, edm, schema, entity type, property, type, csdl, discovery, "+
 				"introspection, data dictionary, dynamics, sap gateway",
-			"internal/odataworker/functions.go",
 		), map[string]string{
 			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
