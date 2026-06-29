@@ -73,16 +73,49 @@ func main() {
 				"$orderby/$top pushdown (odata_query), and inspect an entity type's properties " +
 				"and types from its $metadata/EDMX document (odata_metadata). Supports bearer-" +
 				"token auth and both v4 (value/@odata.nextLink) and v2 (d.results/d.__next) shapes.",
-			"vgi.doc_md": "# odata\n\n" +
-				"Query **OData v2/v4** services from DuckDB/SQL and return their entities as rows.\n\n" +
-				"A generic OData reader over Apache Arrow — works against TripPin, Northwind, " +
-				"Microsoft Dynamics / Dataverse, SAP Gateway, or any spec-compliant OData service.\n\n" +
-				"Table functions:\n" +
-				"- `odata_entity_sets(service_url)` — list the entity sets in a service document.\n" +
-				"- `odata_query(service_url, entity_set, ...)` — read an entity set; one row per " +
-				"entity as raw JSON, following nextLink paging.\n" +
-				"- `odata_metadata(service_url)` — parse `$metadata` (EDMX) into one row per " +
-				"entity-type property.",
+			"vgi.doc_md": "# OData v2/v4 Reader for DuckDB\n\n" +
+				"**Query any OData v2 or v4 REST service directly in SQL** — discover its entity " +
+				"sets, read entities as rows, and inspect `$metadata`, all without writing a line " +
+				"of HTTP or JSON-parsing code.\n\n" +
+				"OData (the Open Data Protocol) is the JSON-over-REST standard behind a huge slice " +
+				"of enterprise data: Microsoft Dynamics 365 and Dataverse, SAP Gateway " +
+				"(S/4HANA and NetWeaver), Microsoft Graph, and countless in-house APIs all speak " +
+				"it. This extension turns those services into queryable tables, so analysts and " +
+				"data engineers can join live OData entities against the rest of their warehouse " +
+				"using plain SQL. It is a *generic* OData reader, not a vendor-specific connector, " +
+				"so the same three functions work against TripPin, Northwind, Dynamics, SAP, or " +
+				"any spec-compliant service.\n\n" +
+				"Under the hood the worker speaks OData over HTTP using only the Go standard " +
+				"library — no heavyweight SDK — and streams results to DuckDB over Apache Arrow. " +
+				"It transparently follows server-driven paging (the v4 `@odata.nextLink` and the " +
+				"v2 `d.__next` cursor), pushes `$filter`, `$select`, `$orderby`, and `$top` down " +
+				"to the service so the server does the work, and understands both response shapes: " +
+				"v4 (`value` / `@odata.nextLink`) and v2 (`d.results` / `d.__next`). Protected " +
+				"services are supported via an optional bearer token argument.\n\n" +
+				"The catalog exposes three table functions in the `main` schema. " +
+				"`odata_entity_sets(service_url)` lists the entity sets a service advertises in " +
+				"its service document — the natural starting point for discovery. " +
+				"`odata_query(service_url, entity_set, ...)` reads an entity set and returns one " +
+				"row per entity as raw JSON (project fields with DuckDB's `json_extract_string`), " +
+				"applying `$filter`/`$select`/`$orderby`/`$top` pushdown and automatic nextLink " +
+				"paging up to a configurable `max_rows` cap. " +
+				"`odata_metadata(service_url)` parses the `$metadata` (EDMX) document into one row " +
+				"per entity-type property with its EDM type, working namespace-agnostically across " +
+				"both EDM 3.0 (v2) and EDM 4.0 (v4). A typical session is discover → inspect → " +
+				"read:\n\n" +
+				"```sql\n" +
+				"SELECT name\n" +
+				"FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService');\n\n" +
+				"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name\n" +
+				"FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService',\n" +
+				"                            'People', top := '5');\n" +
+				"```\n\n" +
+				"## Learn more\n\n" +
+				"- [OData protocol homepage](https://www.odata.org)\n" +
+				"- [OData official documentation](https://www.odata.org/documentation/)\n" +
+				"- [Microsoft OData documentation](https://learn.microsoft.com/en-us/odata/)\n" +
+				"- [vgi-odata source code](https://github.com/Query-farm/vgi-odata)\n" +
+				"- [vgi-go SDK](https://github.com/Query-farm/vgi-go)",
 			"vgi.author":             "Query.Farm",
 			"vgi.copyright":          "Copyright 2026 Query Farm LLC - https://query.farm",
 			"vgi.license":            "MIT",
