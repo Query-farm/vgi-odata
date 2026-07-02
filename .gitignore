@@ -11,6 +11,9 @@ coverage.out
 # DuckDB unittest scratch dir
 /duckdb_unittest_tempdir/
 
+# vgi-lint --ai caches (doc-review + agent simulate verdict caches)
+/.vgi-*-cache.json
+
 # Editor / OS cruft
 .DS_Store
 /.tmpbin/

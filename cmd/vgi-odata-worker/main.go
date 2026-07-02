@@ -34,6 +34,44 @@ const odataExecutableExamples = `[
   }
 ]`
 
+// odataAgentTestTasks is the catalog's vgi.agent_test_tasks suite (VGI152/VGI920):
+// a JSON array of {name, prompt, reference_sql, ...} analyst tasks that
+// `vgi-lint simulate` uses to measure how well an agent can actually use this
+// worker. Only each task's `prompt` reaches the analyst; `reference_sql` is
+// grader-only. Both the analyst's query and the reference run against the live,
+// auth-free TripPin OData v4 service, so grading stays consistent even though
+// TripPin is a mutable sandbox. Together the tasks cover all three functions.
+const odataAgentTestTasks = `[
+  {
+    "name": "list-entity-sets",
+    "prompt": "Using the OData service at https://services.odata.org/V4/TripPinService, list the names of every entity set it exposes.",
+    "reference_sql": "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name",
+    "unordered": true,
+    "success_criteria": "Returns the entity-set names the TripPin service advertises (e.g. People, Airlines, Airports)."
+  },
+  {
+    "name": "first-people-first-names",
+    "prompt": "From the OData service at https://services.odata.org/V4/TripPinService, return the FirstName of the first 5 People, in their result order.",
+    "reference_sql": "SELECT json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5') ORDER BY seq",
+    "ignore_column_names": true,
+    "success_criteria": "Returns exactly 5 first names pulled from the People entities' JSON, in order."
+  },
+  {
+    "name": "count-all-people",
+    "prompt": "How many People entities does the TripPin OData service at https://services.odata.org/V4/TripPinService contain in total (across all pages)?",
+    "reference_sql": "SELECT count(*) AS n FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People')",
+    "ignore_column_names": true,
+    "success_criteria": "Returns a single total count of People entities, having followed nextLink paging."
+  },
+  {
+    "name": "person-type-properties",
+    "prompt": "What properties does the 'Person' entity type expose in the OData service at https://services.odata.org/V4/TripPinService, and what is each property's EDM type?",
+    "reference_sql": "SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person' ORDER BY property",
+    "unordered": true,
+    "success_criteria": "Lists the Person entity type's properties with their EDM types from $metadata."
+  }
+]`
+
 func main() {
 	// Accept --http for HTTP transport and --unix for the AF_UNIX launcher
 	// transport; default is stdio. Unknown launcher flags are tolerated (the
@@ -68,10 +106,10 @@ func main() {
 				"OData is the JSON/REST protocol behind Microsoft Dynamics 365 / Dataverse, " +
 				"SAP Gateway (S/4HANA, NetWeaver), and many enterprise APIs, so this is a " +
 				"generic OData reader rather than a vendor-specific connector. Use it to " +
-				"discover the entity sets a service exposes (odata_entity_sets), read an " +
-				"entity set as rows of raw JSON following nextLink paging with $filter/$select/" +
-				"$orderby/$top pushdown (odata_query), and inspect an entity type's properties " +
-				"and types from its $metadata/EDMX document (odata_metadata). Supports bearer-" +
+				"discover the entity sets a service exposes, read an " +
+				"entity set as rows of raw JSON following nextLink paging with " +
+				"`$filter`/`$select`/`$orderby`/`$top` pushdown, and inspect an entity type's " +
+				"properties and EDM types from its `$metadata`/EDMX document. Supports bearer-" +
 				"token auth and both v4 (value/@odata.nextLink) and v2 (d.results/d.__next) shapes.",
 			"vgi.doc_md": "# OData v2/v4 Reader for DuckDB\n\n" +
 				"**Query any OData v2 or v4 REST service directly in SQL** — discover its entity " +
@@ -126,6 +164,8 @@ func main() {
 			// service (services.odata.org), which has no auth and is the canonical
 			// OData test service.
 			"vgi.executable_examples": odataExecutableExamples,
+			// VGI152/VGI920: agent-suitability task suite for `vgi-lint simulate`.
+			"vgi.agent_test_tasks": odataAgentTestTasks,
 		}),
 		vgi.WithCatalogInfo(vgi.CatalogInfo{
 			Name:      odataworker.CatalogName,
@@ -137,6 +177,14 @@ func main() {
 		vgi.WithSchemaTags(map[string]map[string]string{
 			"main": {
 				"vgi.title": "OData Read Functions",
+				// VGI413: ordered category registry; each function names one via
+				// its vgi.category tag. Categories drive navigation/listing/SEO.
+				"vgi.categories": `[` +
+					`{"name":"Discovery","description":"Explore what an OData service offers — ` +
+					`list its entity sets and inspect entity-type schemas from $metadata."},` +
+					`{"name":"Query","description":"Read entity data from an OData service as ` +
+					`rows of raw JSON, with $filter/$select/$orderby/$top pushdown and paging."}` +
+					`]`,
 				// VGI138: vgi.keywords must be a JSON array of strings.
 				"vgi.keywords": `["odata","entity sets","odata_query","odata_entity_sets",` +
 					`"odata_metadata","rest","json","http","paging","nextlink","$filter",` +

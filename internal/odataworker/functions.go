@@ -136,6 +136,8 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 			"odata, odata query, read entity set, rest, json, http, paging, nextlink, filter, "+
 				"select, orderby, top, dynamics, dataverse, sap gateway, bearer token",
 		), map[string]string{
+			// VGI413: names a category declared in the schema's vgi.categories.
+			"vgi.category": "Query",
 			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `seq` | BIGINT | 0-based position of the entity across all fetched pages. |\n" +
@@ -257,6 +259,8 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 			"odata, entity sets, service document, discovery, list, catalog, metadata, rest, "+
 				"json, schema discovery, dynamics, sap gateway",
 		), map[string]string{
+			// VGI413: names a category declared in the schema's vgi.categories.
+			"vgi.category": "Discovery",
 			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `name` | VARCHAR | Name of an entity set advertised in the service document; pass it as the `entity_set` argument to `odata_query`. |",
@@ -372,6 +376,8 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 			"odata, metadata, edmx, edm, schema, entity type, property, type, csdl, discovery, "+
 				"introspection, data dictionary, dynamics, sap gateway",
 		), map[string]string{
+			// VGI413: names a category declared in the schema's vgi.categories.
+			"vgi.category": "Discovery",
 			"vgi.result_columns_md": "| column | type | description |\n" +
 				"|---|---|---|\n" +
 				"| `entity_type` | VARCHAR | Name of the EDM entity type the property belongs to. |\n" +
