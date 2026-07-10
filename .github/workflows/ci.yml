@@ -128,6 +128,5 @@ jobs:
       - name: vgi-lint
         uses: Query-farm/vgi-lint-check@v1
         with:
-          version: "0.37.0"
           location: "${{ github.workspace }}/vgi-odata-worker"
           fail-on: info

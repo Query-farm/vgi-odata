@@ -50,11 +50,11 @@ const odataAgentTestTasks = `[
     "success_criteria": "Returns the entity-set names the TripPin service advertises (e.g. People, Airlines, Airports)."
   },
   {
-    "name": "first-people-first-names",
-    "prompt": "From the OData service at https://services.odata.org/V4/TripPinService, return the FirstName of the first 5 People, in their result order.",
-    "reference_sql": "SELECT json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5') ORDER BY seq",
+    "name": "people-named-russell",
+    "prompt": "Using the OData service at https://services.odata.org/V4/TripPinService, determine whether any Person in the People entity set has the FirstName 'Russell'. Answer with a single boolean value.",
+    "reference_sql": "SELECT count(*) > 0 AS has_russell FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', \"filter\" := 'FirstName eq ''Russell''')",
     "ignore_column_names": true,
-    "success_criteria": "Returns exactly 5 first names pulled from the People entities' JSON, in order."
+    "success_criteria": "Returns a single boolean that is true because at least one Person named Russell exists (Russell Whyte)."
   },
   {
     "name": "count-all-people",
@@ -69,6 +69,13 @@ const odataAgentTestTasks = `[
     "reference_sql": "SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person' ORDER BY property",
     "unordered": true,
     "success_criteria": "Lists the Person entity type's properties with their EDM types from $metadata."
+  },
+  {
+    "name": "list-known-public-services",
+    "prompt": "This OData extension ships a built-in registry of well-known public OData services. List the name and service_url of every OData v4 service in that registry.",
+    "reference_sql": "SELECT name, service_url FROM odata.main.odata_public_services WHERE odata_version = 'v4' ORDER BY name",
+    "unordered": true,
+    "success_criteria": "Lists the registry's OData v4 services with their root URLs (e.g. TripPin, Northwind V4)."
   }
 ]`
 
@@ -130,24 +137,16 @@ func main() {
 				"to the service so the server does the work, and understands both response shapes: " +
 				"v4 (`value` / `@odata.nextLink`) and v2 (`d.results` / `d.__next`). Protected " +
 				"services are supported via an optional bearer token argument.\n\n" +
-				"The catalog exposes three table functions in the `main` schema. " +
-				"`odata_entity_sets(service_url)` lists the entity sets a service advertises in " +
-				"its service document — the natural starting point for discovery. " +
-				"`odata_query(service_url, entity_set, ...)` reads an entity set and returns one " +
-				"row per entity as raw JSON (project fields with DuckDB's `json_extract_string`), " +
-				"applying `$filter`/`$select`/`$orderby`/`$top` pushdown and automatic nextLink " +
-				"paging up to a configurable `max_rows` cap. " +
-				"`odata_metadata(service_url)` parses the `$metadata` (EDMX) document into one row " +
-				"per entity-type property with its EDM type, working namespace-agnostically across " +
-				"both EDM 3.0 (v2) and EDM 4.0 (v4). A typical session is discover → inspect → " +
-				"read:\n\n" +
-				"```sql\n" +
-				"SELECT name\n" +
-				"FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService');\n\n" +
-				"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name\n" +
-				"FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService',\n" +
-				"                            'People', top := '5');\n" +
-				"```\n\n" +
+				"The `main` schema exposes a small set of read functions covering the whole " +
+				"workflow: discovering the entity sets a service advertises in its service " +
+				"document, reading an entity set as rows of raw JSON (with `$filter`/`$select`/" +
+				"`$orderby`/`$top` pushdown, automatic nextLink paging, and a configurable row cap), " +
+				"and parsing an entity type's properties and EDM types from its `$metadata` (EDMX) " +
+				"document — namespace-agnostically across both EDM 3.0 (v2) and EDM 4.0 (v4). It " +
+				"also ships a browsable registry of well-known auth-free public services so you can " +
+				"start querying without a URL in hand. List the schema to see the functions and " +
+				"their arguments; the catalog's executable examples and per-object example queries " +
+				"provide ready-to-run SQL. The usual path is discover → inspect → read.\n\n" +
 				"## Learn more\n\n" +
 				"- [OData protocol homepage](https://www.odata.org)\n" +
 				"- [OData official documentation](https://www.odata.org/documentation/)\n" +

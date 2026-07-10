@@ -120,13 +120,11 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 				"Fetches an entity set from an OData service and returns one row per entity, "+
 				"following `@odata.nextLink` (v4) or `d.__next` (v2) paging automatically until the "+
 				"set is exhausted or `max_rows` is reached.\n\n"+
-				"### Usage\n\n"+
-				"```sql\n"+
-				"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name\n"+
-				"FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');\n"+
-				"```\n\n"+
-				"Returns `seq` (0-based position) and `entity` (the entity's raw JSON text). Project "+
-				"fields with DuckDB's `json_extract` / `json_extract_string`.\n\n"+
+				"### Result\n\n"+
+				"Each row has `seq` (0-based position of the entity across all fetched pages) and "+
+				"`entity` (the entity's raw JSON object text). Project individual fields with DuckDB's "+
+				"`json_extract` / `json_extract_string`. See this function's example queries for "+
+				"ready-to-run SQL against the public TripPin service.\n\n"+
 				"### Notes\n\n"+
 				"- Push `$filter`/`$select`/`$orderby`/`$top` down to the service with the matching "+
 				"named arguments; `\"filter\"` and `\"select\"` must be quoted (SQL keywords).\n"+
@@ -138,10 +136,12 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 		), map[string]string{
 			// VGI413: names a category declared in the schema's vgi.categories.
 			"vgi.category": "Query",
-			"vgi.result_columns_md": "| column | type | description |\n" +
-				"|---|---|---|\n" +
-				"| `seq` | BIGINT | 0-based position of the entity across all fetched pages. |\n" +
-				"| `entity` | VARCHAR | The entity as its raw JSON object text; project fields with `json_extract` / `json_extract_string`. |",
+			// VGI307/VGI414: static result schema as structured JSON
+			// ({name,type,description}); replaces the retired vgi.result_columns_md.
+			"vgi.result_columns_schema": `[` +
+				`{"name":"seq","type":"BIGINT","description":"0-based position of the entity across all fetched pages."},` +
+				`{"name":"entity","type":"VARCHAR","description":"The entity as its raw JSON object text; project fields with json_extract / json_extract_string."}` +
+				`]`,
 		}),
 		Examples: []vgi.CatalogExample{
 			{
@@ -244,14 +244,10 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 				"Reads the service's top-level service document (the JSON `value[]` array) and "+
 				"returns one row per entity-set name. This is the natural first step when exploring "+
 				"an unfamiliar OData service.\n\n"+
-				"### Usage\n\n"+
-				"```sql\n"+
-				"SELECT name\n"+
-				"FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService')\n"+
-				"ORDER BY name;\n"+
-				"```\n\n"+
-				"Feed any returned `name` into `odata_query` as the `entity_set` argument to read its "+
-				"rows.\n\n"+
+				"### Result\n\n"+
+				"One row per entity set, with a single `name` column. Feed any returned `name` into "+
+				"`odata_query` as the `entity_set` argument to read its rows. See this function's "+
+				"example queries for ready-to-run SQL against the public TripPin service.\n\n"+
 				"### Notes\n\n"+
 				"- Works against OData v2 and v4 service documents.\n"+
 				"- Pass `token := '<bearer>'` for protected services; a NULL `service_url` yields zero "+
@@ -261,9 +257,10 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 		), map[string]string{
 			// VGI413: names a category declared in the schema's vgi.categories.
 			"vgi.category": "Discovery",
-			"vgi.result_columns_md": "| column | type | description |\n" +
-				"|---|---|---|\n" +
-				"| `name` | VARCHAR | Name of an entity set advertised in the service document; pass it as the `entity_set` argument to `odata_query`. |",
+			// VGI307/VGI414: static result schema as structured JSON.
+			"vgi.result_columns_schema": `[` +
+				`{"name":"name","type":"VARCHAR","description":"Name of an entity set advertised in the service document; pass it as the entity_set argument to odata_query."}` +
+				`]`,
 		}),
 		Examples: []vgi.CatalogExample{
 			{
@@ -362,12 +359,11 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 				"row per entity-type property: the entity type name, the property name, and the "+
 				"property's EDM type. Use it to learn the shape and column types of an entity before "+
 				"querying it with `odata_query`.\n\n"+
-				"### Usage\n\n"+
-				"```sql\n"+
-				"SELECT property, type\n"+
-				"FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService')\n"+
-				"WHERE entity_type = 'Person';\n"+
-				"```\n\n"+
+				"### Result\n\n"+
+				"One row per entity-type property, with `entity_type`, `property`, and `type` (the "+
+				"property's EDM type) columns. Filter by `entity_type` to inspect a single type. See "+
+				"this function's example queries for ready-to-run SQL against the public TripPin "+
+				"service.\n\n"+
 				"### Notes\n\n"+
 				"- Parsing is namespace-agnostic, so both OData v2 (EDM 3.0) and v4 (EDM 4.0) "+
 				"documents are supported.\n"+
@@ -378,11 +374,12 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 		), map[string]string{
 			// VGI413: names a category declared in the schema's vgi.categories.
 			"vgi.category": "Discovery",
-			"vgi.result_columns_md": "| column | type | description |\n" +
-				"|---|---|---|\n" +
-				"| `entity_type` | VARCHAR | Name of the EDM entity type the property belongs to. |\n" +
-				"| `property` | VARCHAR | Name of a property declared on that entity type. |\n" +
-				"| `type` | VARCHAR | The property's EDM type, e.g. `Edm.String`, `Edm.Int32`, `Edm.DateTimeOffset`. |",
+			// VGI307/VGI414: static result schema as structured JSON.
+			"vgi.result_columns_schema": `[` +
+				`{"name":"entity_type","type":"VARCHAR","description":"Name of the EDM entity type the property belongs to."},` +
+				`{"name":"property","type":"VARCHAR","description":"Name of a property declared on that entity type."},` +
+				`{"name":"type","type":"VARCHAR","description":"The property's EDM type, e.g. Edm.String, Edm.Int32, Edm.DateTimeOffset."}` +
+				`]`,
 		}),
 		Examples: []vgi.CatalogExample{
 			{
@@ -453,9 +450,10 @@ func isNullArg(args *vgi.Arguments, pos int) bool {
 	return col.Len() == 0 || col.IsNull(0)
 }
 
-// Register registers all OData table functions on the worker.
+// Register registers all OData table functions and browsable views on the worker.
 func Register(w *vgi.Worker) {
 	w.RegisterTable(NewQueryFunction())
 	w.RegisterTable(NewEntitySetsFunction())
 	w.RegisterTable(NewMetadataFunction())
+	RegisterViews(w)
 }
