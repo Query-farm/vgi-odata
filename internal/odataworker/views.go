@@ -40,11 +40,11 @@ const publicServicesDocMD = "## odata_public_services\n\n" +
 	"entity type's schema, or `odata_query` to read rows. Because the view is a static in-worker " +
 	"registry, it scans instantly and works offline even when a listed service is unreachable.\n\n" +
 	"### Columns\n\n" +
-	"- `name` (VARCHAR) — short human-friendly service name.\n" +
-	"- `service_url` (VARCHAR) — the service root URL; feed it to the OData functions.\n" +
-	"- `odata_version` (VARCHAR) — `v2`, `v3`, or `v4`; pass `version := 'v2'` to `odata_query` " +
+	"- `name` (`VARCHAR`) — short human-friendly service name.\n" +
+	"- `service_url` (`VARCHAR`) — the service root URL; feed it to the OData functions.\n" +
+	"- `odata_version` (`VARCHAR`) — `v2`, `v3`, or `v4`; pass `version := 'v2'` to `odata_query` " +
 	"for a v2 service.\n" +
-	"- `description` (VARCHAR) — what the service contains.\n\n" +
+	"- `description` (`VARCHAR`) — what the service contains.\n\n" +
 	"### Notes\n\n" +
 	"The registry is a convenience sample of stable public reference services, not an exhaustive " +
 	"directory — this worker can query any spec-compliant OData v2/v4 endpoint, not only these."

@@ -142,6 +142,15 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 				`{"name":"seq","type":"BIGINT","description":"0-based position of the entity across all fetched pages."},` +
 				`{"name":"entity","type":"VARCHAR","description":"The entity as its raw JSON object text; project fields with json_extract / json_extract_string."}` +
 				`]`,
+			// VGI515: object-level described example queries. duckdb_functions().examples
+			// drops the CatalogExample descriptions, so the described list is carried here
+			// as a JSON [{description, sql}] tag (mirrors the Examples below).
+			"vgi.example_queries": `[` +
+				`{"description":"Read the first 5 People entities from the public TripPin OData v4 service and pull a field out of the raw JSON.",` +
+				`"sql":"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');"},` +
+				`{"description":"Count People named Russell, pushing the predicate down to the service via the OData $filter option.",` +
+				`"sql":"SELECT count(*) FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', \"filter\" := 'FirstName eq ''Russell''', max_rows := 1000);"}` +
+				`]`,
 		}),
 		Examples: []vgi.CatalogExample{
 			{
@@ -261,6 +270,11 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 			"vgi.result_columns_schema": `[` +
 				`{"name":"name","type":"VARCHAR","description":"Name of an entity set advertised in the service document; pass it as the entity_set argument to odata_query."}` +
 				`]`,
+			// VGI515: described example queries (duckdb_functions().examples drops descriptions).
+			"vgi.example_queries": `[` +
+				`{"description":"Discover every entity set the TripPin OData service exposes (People, Airlines, Airports, ...).",` +
+				`"sql":"SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;"}` +
+				`]`,
 		}),
 		Examples: []vgi.CatalogExample{
 			{
@@ -379,6 +393,11 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 				`{"name":"entity_type","type":"VARCHAR","description":"Name of the EDM entity type the property belongs to."},` +
 				`{"name":"property","type":"VARCHAR","description":"Name of a property declared on that entity type."},` +
 				`{"name":"type","type":"VARCHAR","description":"The property's EDM type, e.g. Edm.String, Edm.Int32, Edm.DateTimeOffset."}` +
+				`]`,
+			// VGI515: described example queries (duckdb_functions().examples drops descriptions).
+			"vgi.example_queries": `[` +
+				`{"description":"Inspect the properties and EDM types of the Person entity type from the service's $metadata (EDMX) document.",` +
+				`"sql":"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';"}` +
 				`]`,
 		}),
 		Examples: []vgi.CatalogExample{

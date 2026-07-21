@@ -144,9 +144,9 @@ func main() {
 				"and parsing an entity type's properties and EDM types from its `$metadata` (EDMX) " +
 				"document — namespace-agnostically across both EDM 3.0 (v2) and EDM 4.0 (v4). It " +
 				"also ships a browsable registry of well-known auth-free public services so you can " +
-				"start querying without a URL in hand. List the schema to see the functions and " +
-				"their arguments; the catalog's executable examples and per-object example queries " +
-				"provide ready-to-run SQL. The usual path is discover → inspect → read.\n\n" +
+				"start querying without a URL in hand. The catalog's executable examples and " +
+				"per-object example queries provide ready-to-run SQL, and the usual path is " +
+				"discover → inspect → read.\n\n" +
 				"## Learn more\n\n" +
 				"- [OData protocol homepage](https://www.odata.org)\n" +
 				"- [OData official documentation](https://www.odata.org/documentation/)\n" +
@@ -194,11 +194,17 @@ func main() {
 				"domain":   "enterprise-data",
 				"category": "data-integration",
 				"topic":    "odata-rest-api",
-				// VGI506 representative example queries for the schema (plain string,
-				// catalog-qualified SQL).
-				"vgi.example_queries": "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;\n" +
-					"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');\n" +
-					"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';",
+				// VGI506/VGI515 representative example queries for the schema: a JSON
+				// list of {description, sql} objects (catalog-qualified SQL), so every
+				// example carries a human-readable description.
+				"vgi.example_queries": `[` +
+					`{"description":"Discover every entity set the TripPin OData service exposes.",` +
+					`"sql":"SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name"},` +
+					`{"description":"Read the first 5 People entities and project a field out of the raw JSON.",` +
+					`"sql":"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5')"},` +
+					`{"description":"Inspect the Person entity type's properties and EDM types from $metadata.",` +
+					`"sql":"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person'"}` +
+					`]`,
 				"vgi.doc_llm": "The `main` schema groups the three OData read functions. A typical " +
 					"workflow is: call `odata_entity_sets(service_url)` to discover what an OData service " +
 					"exposes, optionally `odata_metadata(service_url)` to learn an entity type's " +
