@@ -33,6 +33,22 @@
 # Optional:
 #   TRANSPORT          subprocess (default) | http | unix
 #   STAGE              scratch dir for the preprocessed test tree (default: mktemp)
+#   TEST_PATTERN       runner glob under the staged tree to execute
+#                      (default: test/sql/*). All files are always staged; this
+#                      only narrows what RUNS — e.g. a single-file stdio smoke
+#                      through the docker image.
+#   SKIP_MOCK          if non-empty, do NOT build/launch the repo's mock OData
+#                      server; the caller has provided one out-of-band and set
+#                      VGI_ODATA_TEST_URL to a URL the worker can reach (e.g. a
+#                      mock container's docker-network hostname). Used by the
+#                      docker image_test, where the worker runs in a container
+#                      and cannot reach a host-loopback mock. Default (unset):
+#                      build+launch the mock exactly as before.
+#   pre-launched http  for TRANSPORT=http, if VGI_ODATA_WORKER is ALREADY an
+#                      http(s):// URL (e.g. a warm worker container published on
+#                      the host), it is used as-is and no local worker binary is
+#                      launched. Otherwise the http leg launches the binary as
+#                      before.
 set -euo pipefail
 
 : "${HAYBARN_UNITTEST:?path to the haybarn-unittest binary}"
@@ -74,27 +90,38 @@ trap cleanup EXIT
 # "PORT:<n>" on stdout (see cmd/mockserver/main.go). We capture that and export
 # VGI_ODATA_TEST_URL. The mock is required for every transport — the worker still
 # makes the HTTP call.
-MOCK_BIN="$STAGE/mockserver"
-echo "Building mock OData server ..."
-( cd "$REPO" && go build -o "$MOCK_BIN" ./cmd/mockserver )
+#
+# SKIP_MOCK: the docker image_test runs the worker inside a container, which
+# cannot reach a mock bound to the host loopback. In that mode the caller runs
+# the mock itself (as a container on a shared docker network) and pre-sets
+# VGI_ODATA_TEST_URL to an in-network hostname the worker can resolve, so here we
+# skip building/launching a mock entirely.
+if [ -n "${SKIP_MOCK:-}" ]; then
+  : "${VGI_ODATA_TEST_URL:?SKIP_MOCK is set but VGI_ODATA_TEST_URL (the external mock URL) is not}"
+  echo "SKIP_MOCK set — using externally provided mock at $VGI_ODATA_TEST_URL"
+else
+  MOCK_BIN="$STAGE/mockserver"
+  echo "Building mock OData server ..."
+  ( cd "$REPO" && go build -o "$MOCK_BIN" ./cmd/mockserver )
 
-MOCK_PORT_FILE="$(mktemp)"
-"$MOCK_BIN" --addr 127.0.0.1:0 >"$MOCK_PORT_FILE" 2>/dev/null &
-MOCK_PID=$!
+  MOCK_PORT_FILE="$(mktemp)"
+  "$MOCK_BIN" --addr 127.0.0.1:0 >"$MOCK_PORT_FILE" 2>/dev/null &
+  MOCK_PID=$!
 
-PORT=""
-for _ in $(seq 1 30); do
-  PORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$MOCK_PORT_FILE" 2>/dev/null | head -1)"
-  [ -n "$PORT" ] && break
-  sleep 0.2
-done
-if [ -z "$PORT" ]; then
-  echo "ERROR: mock server did not report a port" >&2
-  exit 1
+  PORT=""
+  for _ in $(seq 1 30); do
+    PORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$MOCK_PORT_FILE" 2>/dev/null | head -1)"
+    [ -n "$PORT" ] && break
+    sleep 0.2
+  done
+  if [ -z "$PORT" ]; then
+    echo "ERROR: mock server did not report a port" >&2
+    exit 1
+  fi
+  rm -f "$MOCK_PORT_FILE"
+  export VGI_ODATA_TEST_URL="http://127.0.0.1:$PORT"
+  echo "Mock OData server listening on $VGI_ODATA_TEST_URL (pid $MOCK_PID)"
 fi
-rm -f "$MOCK_PORT_FILE"
-export VGI_ODATA_TEST_URL="http://127.0.0.1:$PORT"
-echo "Mock OData server listening on $VGI_ODATA_TEST_URL (pid $MOCK_PID)"
 
 # --- Per-transport: resolve VGI_ODATA_WORKER (the ATTACH LOCATION) -----------
 # subprocess keeps the binary path (extension spawns stdio). http/unix start the
@@ -105,27 +132,34 @@ case "$TRANSPORT" in
     ;;
 
   http)
-    # Start the worker in --http mode; it prints "PORT:<n>" once listening.
-    WORKER_PORT_FILE="$(mktemp)"
-    echo "Transport: http — starting '$WORKER_BIN --http' ..."
-    "$WORKER_BIN" --http >"$WORKER_PORT_FILE" 2>/dev/null &
-    WORKER_PID=$!
-    WPORT=""
-    for _ in $(seq 1 50); do
-      WPORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$WORKER_PORT_FILE" 2>/dev/null | head -1)"
-      [ -n "$WPORT" ] && break
-      kill -0 "$WORKER_PID" 2>/dev/null || { echo "ERROR: http worker exited before reporting a port" >&2; cat "$WORKER_PORT_FILE" >&2 || true; exit 1; }
-      sleep 0.2
-    done
-    rm -f "$WORKER_PORT_FILE"
-    if [ -z "$WPORT" ]; then
-      echo "ERROR: http worker did not report a port" >&2
-      exit 1
+    # Pre-launched worker: if VGI_ODATA_WORKER is already an http(s):// URL
+    # (e.g. a warm worker container published on the host in the docker
+    # image_test), use it verbatim and do NOT launch a local binary.
+    if printf '%s' "$VGI_ODATA_WORKER" | grep -Eq '^https?://'; then
+      echo "Transport: http — using pre-launched HTTP worker at $VGI_ODATA_WORKER"
+    else
+      # Start the worker in --http mode; it prints "PORT:<n>" once listening.
+      WORKER_PORT_FILE="$(mktemp)"
+      echo "Transport: http — starting '$WORKER_BIN --http' ..."
+      "$WORKER_BIN" --http >"$WORKER_PORT_FILE" 2>/dev/null &
+      WORKER_PID=$!
+      WPORT=""
+      for _ in $(seq 1 50); do
+        WPORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$WORKER_PORT_FILE" 2>/dev/null | head -1)"
+        [ -n "$WPORT" ] && break
+        kill -0 "$WORKER_PID" 2>/dev/null || { echo "ERROR: http worker exited before reporting a port" >&2; cat "$WORKER_PORT_FILE" >&2 || true; exit 1; }
+        sleep 0.2
+      done
+      rm -f "$WORKER_PORT_FILE"
+      if [ -z "$WPORT" ]; then
+        echo "ERROR: http worker did not report a port" >&2
+        exit 1
+      fi
+      # The LOCATION must be the bare scheme://host:port with NO path (the
+      # extension POSTs each RPC method at <LOCATION>/<method>, mounted at root).
+      export VGI_ODATA_WORKER="http://127.0.0.1:$WPORT"
+      echo "HTTP worker listening on $VGI_ODATA_WORKER (pid $WORKER_PID)"
     fi
-    # The LOCATION must be the bare scheme://host:port with NO path (the
-    # extension POSTs each RPC method at <LOCATION>/<method>, mounted at root).
-    export VGI_ODATA_WORKER="http://127.0.0.1:$WPORT"
-    echo "HTTP worker listening on $VGI_ODATA_WORKER (pid $WORKER_PID)"
     ;;
 
   unix)
@@ -210,10 +244,14 @@ rm -f "$STAGE/test/_warm.test"
 # includes the substring "HTTP". So a broken HTTP transport would otherwise show
 # "All tests were skipped" and the job would go GREEN having run nothing — a
 # fake pass. We detect that and fail explicitly.
-echo "Running suite (transport: $TRANSPORT, worker: $VGI_ODATA_WORKER) ..."
+# TEST_PATTERN narrows what RUNS (all files are always staged above); default is
+# the whole suite. The docker image_test uses a single file for the fast stdio
+# smoke and the whole suite for the warm-HTTP-container leg.
+TEST_PATTERN="${TEST_PATTERN:-test/sql/*}"
+echo "Running suite (transport: $TRANSPORT, worker: $VGI_ODATA_WORKER, pattern: $TEST_PATTERN) ..."
 RUN_LOG="$STAGE/run.log"
 set +e
-"$HAYBARN_UNITTEST" "test/sql/*" 2>&1 | tee "$RUN_LOG"
+"$HAYBARN_UNITTEST" "$TEST_PATTERN" 2>&1 | tee "$RUN_LOG"
 RUN_RC="${PIPESTATUS[0]}"
 set -e
 

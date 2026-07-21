@@ -31,6 +31,14 @@ import (
 
 func main() {
 	addr := flag.String("addr", "127.0.0.1:0", "TCP address to listen on (host:port; port 0 = pick a free port)")
+	// baseURL, when non-empty, is the absolute prefix used to build the
+	// @odata.nextLink the mock advertises for page 2. It defaults to
+	// http://127.0.0.1:<bound-port> (correct when the client shares the mock's
+	// loopback, as in `make test-sql`), but the paging worker follows the
+	// nextLink verbatim, so when the worker runs in a container the mock must
+	// advertise an address the container can reach (e.g. a docker-network
+	// hostname like http://odata-mock:8000). Set --base-url for that case.
+	baseURLFlag := flag.String("base-url", "", "absolute scheme://host[:port] used to build the @odata.nextLink (default: http://127.0.0.1:<bound-port>)")
 	flag.Parse()
 
 	lis, err := net.Listen("tcp", *addr)
@@ -39,6 +47,9 @@ func main() {
 	}
 	port := lis.Addr().(*net.TCPAddr).Port
 	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
+	if *baseURLFlag != "" {
+		baseURL = *baseURLFlag
+	}
 
 	fmt.Printf("PORT:%d\n", port)
 	_ = os.Stdout.Sync()
