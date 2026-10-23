@@ -1,0 +1,24 @@
+# Private grader fields for the vgi.agent_test_tasks suite advertised by the
+# worker (VGI416: the catalog tag carries only name + prompt). vgi-lint joins
+# these to the advertised tasks by name.
+tasks:
+  - name: "list-entity-sets"
+    reference_sql: "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name"
+    unordered: true
+    success_criteria: "Returns the entity-set names the TripPin service advertises (e.g. People, Airlines, Airports)."
+  - name: "people-named-russell"
+    reference_sql: "SELECT count(*) > 0 AS has_russell FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', \"filter\" := 'FirstName eq ''Russell''')"
+    ignore_column_names: true
+    success_criteria: "Returns a single boolean that is true because at least one Person named Russell exists (Russell Whyte)."
+  - name: "count-all-people"
+    reference_sql: "SELECT count(*) AS n FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People')"
+    ignore_column_names: true
+    success_criteria: "Returns a single total count of People entities, having followed nextLink paging."
+  - name: "person-type-properties"
+    reference_sql: "SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person' ORDER BY property"
+    unordered: true
+    success_criteria: "Lists the Person entity type's properties with their EDM types from $metadata."
+  - name: "list-known-public-services"
+    reference_sql: "SELECT name, service_url FROM odata.main.odata_public_services WHERE odata_version = 'v4' ORDER BY name"
+    unordered: true
+    success_criteria: "Lists the registry's OData v4 services with their root URLs (e.g. TripPin, Northwind V4)."

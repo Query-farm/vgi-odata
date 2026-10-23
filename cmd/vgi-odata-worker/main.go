@@ -35,47 +35,33 @@ const odataExecutableExamples = `[
 ]`
 
 // odataAgentTestTasks is the catalog's vgi.agent_test_tasks suite (VGI152/VGI920):
-// a JSON array of {name, prompt, reference_sql, ...} analyst tasks that
-// `vgi-lint simulate` uses to measure how well an agent can actually use this
-// worker. Only each task's `prompt` reaches the analyst; `reference_sql` is
-// grader-only. Both the analyst's query and the reference run against the live,
+// a JSON array of {name, prompt} analyst tasks that `vgi-lint simulate` uses
+// to measure how well an agent can actually use this worker. Only each task's
+// `prompt` reaches the analyst; the grader-only fields (reference_sql,
+// success_criteria, ...) live in the vgi-agent-tests.yaml sidecar at the repo
+// root, keyed by task name (VGI416). Both the analyst's query and the reference run against the live,
 // auth-free TripPin OData v4 service, so grading stays consistent even though
 // TripPin is a mutable sandbox. Together the tasks cover all three functions.
 const odataAgentTestTasks = `[
   {
     "name": "list-entity-sets",
-    "prompt": "Using the OData service at https://services.odata.org/V4/TripPinService, list the names of every entity set it exposes.",
-    "reference_sql": "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name",
-    "unordered": true,
-    "success_criteria": "Returns the entity-set names the TripPin service advertises (e.g. People, Airlines, Airports)."
+    "prompt": "Using the OData service at https://services.odata.org/V4/TripPinService, list the names of every entity set it exposes."
   },
   {
     "name": "people-named-russell",
-    "prompt": "Using the OData service at https://services.odata.org/V4/TripPinService, determine whether any Person in the People entity set has the FirstName 'Russell'. Answer with a single boolean value.",
-    "reference_sql": "SELECT count(*) > 0 AS has_russell FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', \"filter\" := 'FirstName eq ''Russell''')",
-    "ignore_column_names": true,
-    "success_criteria": "Returns a single boolean that is true because at least one Person named Russell exists (Russell Whyte)."
+    "prompt": "Using the OData service at https://services.odata.org/V4/TripPinService, determine whether any Person in the People entity set has the FirstName 'Russell'. Answer with a single boolean value."
   },
   {
     "name": "count-all-people",
-    "prompt": "How many People entities does the TripPin OData service at https://services.odata.org/V4/TripPinService contain in total (across all pages)?",
-    "reference_sql": "SELECT count(*) AS n FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People')",
-    "ignore_column_names": true,
-    "success_criteria": "Returns a single total count of People entities, having followed nextLink paging."
+    "prompt": "How many People entities does the TripPin OData service at https://services.odata.org/V4/TripPinService contain in total (across all pages)?"
   },
   {
     "name": "person-type-properties",
-    "prompt": "What properties does the 'Person' entity type expose in the OData service at https://services.odata.org/V4/TripPinService, and what is each property's EDM type?",
-    "reference_sql": "SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person' ORDER BY property",
-    "unordered": true,
-    "success_criteria": "Lists the Person entity type's properties with their EDM types from $metadata."
+    "prompt": "What properties does the 'Person' entity type expose in the OData service at https://services.odata.org/V4/TripPinService, and what is each property's EDM type?"
   },
   {
     "name": "list-known-public-services",
-    "prompt": "This OData extension ships a built-in registry of well-known public OData services. List the name and service_url of every OData v4 service in that registry.",
-    "reference_sql": "SELECT name, service_url FROM odata.main.odata_public_services WHERE odata_version = 'v4' ORDER BY name",
-    "unordered": true,
-    "success_criteria": "Lists the registry's OData v4 services with their root URLs (e.g. TripPin, Northwind V4)."
+    "prompt": "This OData extension ships a built-in registry of well-known public OData services. List the name and service_url of every OData v4 service in that registry."
   }
 ]`
 
