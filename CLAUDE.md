@@ -119,7 +119,7 @@ Mirrors `vgi-grpc`'s start/stop pattern:
 3. The Makefile exports `VGI_ODATA_WORKER` (the worker binary, used as the
    ATTACH `LOCATION`) and `VGI_ODATA_TEST_URL=http://127.0.0.1:<n>` (read by the
    `.test` files as the service root).
-4. `haybarn-unittest --test-dir . "test/sql/*"` runs the suite.
+4. `haybarn-unittest --keep-home --test-dir . "test/sql/*"` runs the suite.
 5. A shell `trap` kills the mock; the mock handles SIGTERM with
    `http.Server.Shutdown`, so it exits 0 (clean `make`).
 

@@ -13,7 +13,7 @@
 #   make clean       Remove built binaries
 #
 # test-sql needs haybarn-unittest on PATH:
-#   uv tool install 'haybarn-unittest<2'
+#   uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'
 #   export PATH="$$HOME/.local/bin:$$PATH"
 
 WORKER_BIN := vgi-odata-worker
@@ -58,7 +58,7 @@ test-sql: build
 	echo "mock OData server listening on 127.0.0.1:$$PORT (pid $$MOCK_PID)"; \
 	VGI_ODATA_WORKER="$(WORKER_PATH)" \
 	VGI_ODATA_TEST_URL="http://127.0.0.1:$$PORT" \
-		haybarn-unittest --test-dir "$(TEST_DIR)" "$(TEST_PATTERN)"
+		haybarn-unittest --keep-home --test-dir "$(TEST_DIR)" "$(TEST_PATTERN)"
 
 fmt:
 	gofmt -w .
