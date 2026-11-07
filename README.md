@@ -24,8 +24,7 @@ pull fields out with DuckDB's `json_extract` / `json_extract_string`.
 INSTALL vgi FROM community; LOAD vgi;
 INSTALL json; LOAD json;     -- to json_extract from the entity column
 
--- LOCATION is the path to the compiled worker binary.
-ATTACH 'odata' AS odata (TYPE vgi, LOCATION '/path/to/vgi-odata-worker');
+ATTACH 'odata' AS odata (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-odata@v0.2.1');
 
 -- Discover the entity sets a service exposes.
 SELECT * FROM odata.odata_entity_sets('https://services.odata.org/V4/TripPinService');
@@ -42,6 +41,41 @@ FROM odata.odata_query(
 SELECT * FROM odata.odata_metadata('https://services.odata.org/V4/TripPinService')
 WHERE entity_type = 'Person';
 ```
+
+## Quick start
+
+Every [GitHub release](https://github.com/Query-farm/vgi-odata/releases) ships a prebuilt worker binary. The `vgi` extension downloads the one for your platform, checks its SHA-256 and caches it, so there is nothing to install besides DuckDB:
+
+```sql
+INSTALL vgi FROM community;
+LOAD vgi;
+
+ATTACH 'odata' AS odata (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-odata@v0.2.1');
+
+-- Discover the entity sets the TripPin OData service exposes.
+SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;
+
+-- Read the first 5 People entities and pull a field out of the raw JSON.
+SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5') ORDER BY seq;
+```
+
+The table functions fetch from the OData service URL you pass (the examples use the public TripPin demo service). For a protected service pass a bearer token with `token := '…'`; see [`odata_query` named options](#odata_query-named-options).
+
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64) and Windows (x86-64). `github-auto://` needs an explicit release tag; change `@v0.2.1` to move to a newer release.
+
+### Other ways to run it
+
+- **Docker** (the image bundles the worker; needs a container runtime):
+
+  ```sql
+  ATTACH 'odata' AS odata (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-odata:0.2.1');
+  ```
+
+- **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-odata/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
+
+### Build from source
+
+To build the worker yourself, see [Build](#build).
 
 ## Note on overlap with `erpl_web`
 
