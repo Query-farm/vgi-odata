@@ -96,6 +96,8 @@ func main() {
 		vgi.WithCatalogTags(map[string]string{
 			"source":    "vgi-odata",
 			"vgi.title": "OData v2/v4 Reader",
+			// VGI148: one-sentence subtitle shown under the title in listings.
+			"vgi.subtitle": "Read OData v2/v4 REST services from SQL, with $filter pushdown, automatic paging and metadata discovery.",
 			// VGI138: vgi.keywords must be a JSON array of strings.
 			"vgi.keywords": `["odata","odata reader","rest","json","http","entity set",` +
 				`"$metadata","edmx","nextlink paging","$filter","$select","$orderby","$top",` +

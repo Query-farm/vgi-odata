@@ -148,8 +148,8 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 			"vgi.example_queries": `[` +
 				`{"description":"Read the first 5 People entities from the public TripPin OData v4 service and pull a field out of the raw JSON.",` +
 				`"sql":"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');"},` +
-				`{"description":"Count People named Russell, pushing the predicate down to the service via the OData $filter option.",` +
-				`"sql":"SELECT count(*) FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', \"filter\" := 'FirstName eq ''Russell''', max_rows := 1000);"}` +
+				`{"description":"Count the German customers in the public Northwind OData v4 sample, pushing the predicate down to the service via the OData $filter option.",` +
+				`"sql":"SELECT count(*) FROM odata.main.odata_query('https://services.odata.org/V4/Northwind/Northwind.svc', 'Customers', \"filter\" := 'Country eq ''Germany''', max_rows := 1000);"}` +
 				`]`,
 		}),
 		Examples: []vgi.CatalogExample{
@@ -160,9 +160,9 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 			},
 			{
 				SQL: "SELECT count(*) FROM odata.main.odata_query(" +
-					"'https://services.odata.org/V4/TripPinService', 'People', " +
-					"\"filter\" := 'FirstName eq ''Russell''', max_rows := 1000);",
-				Description: "Count People named Russell, pushing the predicate down to the service via the OData $filter option.",
+					"'https://services.odata.org/V4/Northwind/Northwind.svc', 'Customers', " +
+					"\"filter\" := 'Country eq ''Germany''', max_rows := 1000);",
+				Description: "Count the German customers in the public Northwind OData v4 sample, pushing the predicate down to the service via the OData $filter option.",
 			},
 		},
 	}
