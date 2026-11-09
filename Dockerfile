@@ -12,9 +12,9 @@
 # syntax=docker/dockerfile:1
 
 # ---- build stage -----------------------------------------------------------
-# CGO is REQUIRED: the vgi-go / vgi-rpc-go SDK links the Haybarn 2.0 engine (via
-# haybarn-go-bindings) for the Arrow C Data Interface, so CGO_ENABLED=0 fails to
-# link. gcc/g++ + libc headers back the cgo compile. The reusable workflow builds
+# CGO is kept enabled (gcc/g++ + libc headers back the cgo compile). Since
+# vgi-go 0.41 the embedded Haybarn 2.0 engine is opt-in (exprduckdb) and this
+# worker does not use it, so it would also build with CGO_ENABLED=0. The reusable workflow builds
 # one image per arch on a native runner, so there is no cross-compilation.
 FROM golang:1.26-bookworm AS build
 WORKDIR /src
