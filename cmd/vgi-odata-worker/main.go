@@ -199,27 +199,22 @@ func main() {
 					`{"description":"Inspect the Person entity type's properties and EDM types from $metadata.",` +
 					`"sql":"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person'"}` +
 					`]`,
-				"vgi.doc_llm": "The `main` schema groups the three OData read functions. A typical " +
-					"workflow is: call `odata_entity_sets(service_url)` to discover what an OData service " +
-					"exposes, optionally `odata_metadata(service_url)` to learn an entity type's " +
-					"properties and EDM types, then `odata_query(service_url, entity_set, ...)` to read " +
-					"the data as rows of raw JSON with `$filter`/`$select`/`$orderby`/`$top` pushdown and " +
-					"automatic nextLink paging. All three accept an optional bearer token and work " +
-					"against both OData v4 (value/@odata.nextLink) and v2 (d.results/d.__next) services.",
-				"vgi.doc_md": "## OData read functions\n\n" +
-					"Functions for reading **OData v2/v4** services from SQL over Apache Arrow.\n\n" +
-					"### Functions\n\n" +
-					"- **`odata_entity_sets(service_url)`** — list the entity sets a service advertises " +
-					"in its service document.\n" +
-					"- **`odata_query(service_url, entity_set, ...)`** — read an entity set; one row per " +
-					"entity as raw JSON, following nextLink paging with `$filter`/`$select`/`$orderby`/" +
-					"`$top` pushdown.\n" +
-					"- **`odata_metadata(service_url)`** — parse `$metadata` (EDMX) into one row per " +
-					"entity-type property.\n\n" +
-					"### Notes\n\n" +
-					"Start with `odata_entity_sets` to discover a service, then `odata_query` to read " +
-					"rows; project JSON fields with `json_extract_string`. All functions accept an " +
-					"optional bearer token for protected services.",
+				"vgi.doc_llm": "The `main` schema reads OData v2/v4 REST services as SQL rows. Reach for it " +
+					"when data sits behind an OData endpoint (SAP, Dynamics, SharePoint, public open-data " +
+					"portals): discover what a service exposes from its service document, learn entity " +
+					"properties and EDM types from `$metadata`, then read an entity set as one raw-JSON row " +
+					"per entity with `$filter`/`$select`/`$orderby`/`$top` pushed to the server and " +
+					"nextLink paging followed automatically. Project fields with `json_extract_string`. " +
+					"An optional bearer token reaches protected services; both v4 (value/@odata.nextLink) " +
+					"and v2 (d.results/d.__next) payloads are understood.",
+				"vgi.doc_md": "## Reading OData services\n\n" +
+					"Query **OData v2/v4** REST services from SQL over Apache Arrow.\n\n" +
+					"A typical session discovers what a service exposes from its service document, " +
+					"inspects entity-type properties and EDM types from `$metadata`, then reads an entity " +
+					"set as rows of raw JSON. Query options (`$filter`, `$select`, `$orderby`, `$top`) are " +
+					"pushed to the server and nextLink paging is followed automatically; project JSON " +
+					"fields with `json_extract_string`.\n\n" +
+					"Protected services take an optional bearer token.",
 			},
 		}),
 	)
