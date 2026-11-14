@@ -22,3 +22,18 @@ tasks:
     reference_sql: "SELECT name, service_url FROM odata.main.odata_public_services WHERE odata_version = 'v4' ORDER BY name"
     unordered: true
     success_criteria: "Lists the registry's OData v4 services with their root URLs (e.g. TripPin, Northwind V4)."
+  - name: "top-freight-customer-country"
+    # Composes two odata_query reads (Customers JOIN Orders on CustomerID). Graded by
+    # check_sql against the agent's saved table, recomputed live. Northwind is a static
+    # read-only sample: USA (~13,771) leads Germany (~11,283) by ~22% (2026-11), so the
+    # answer is not a near-tie; a wrong country (e.g. Germany) fails the check.
+    check_sql: >-
+      SELECT (SELECT count(*) FROM top_freight_country) = 1
+      AND (SELECT max(country) FROM top_freight_country) = (
+        SELECT json_extract_string(c.entity, '$.Country')
+        FROM odata.main.odata_query('https://services.odata.org/V4/Northwind/Northwind.svc', 'Customers', "select" := 'CustomerID,Country') AS c
+        JOIN odata.main.odata_query('https://services.odata.org/V4/Northwind/Northwind.svc', 'Orders', "select" := 'CustomerID,Freight') AS o
+          ON json_extract_string(o.entity, '$.CustomerID') = json_extract_string(c.entity, '$.CustomerID')
+        GROUP BY 1
+        ORDER BY sum(TRY_CAST(json_extract_string(o.entity, '$.Freight') AS DOUBLE)) DESC
+        LIMIT 1)

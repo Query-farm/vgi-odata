@@ -142,29 +142,10 @@ func (f *QueryFunction) Metadata() vgi.FunctionMetadata {
 				`{"name":"seq","type":"BIGINT","description":"0-based position of the entity across all fetched pages."},` +
 				`{"name":"entity","type":"VARCHAR","description":"The entity as its raw JSON object text; project fields with json_extract / json_extract_string."}` +
 				`]`,
-			// VGI515: object-level described example queries. duckdb_functions().examples
-			// drops the CatalogExample descriptions, so the described list is carried here
-			// as a JSON [{description, sql}] tag (mirrors the Examples below).
-			"vgi.example_queries": `[` +
-				`{"description":"Read the first 5 People entities from the public TripPin OData v4 service and pull a field out of the raw JSON.",` +
-				`"sql":"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');"},` +
-				`{"description":"Count the German customers in the public Northwind OData v4 sample, pushing the predicate down to the service via the OData $filter option.",` +
-				`"sql":"SELECT count(*) FROM odata.main.odata_query('https://services.odata.org/V4/Northwind/Northwind.svc', 'Customers', \"filter\" := 'Country eq ''Germany''', max_rows := 1000);"}` +
-				`]`,
+			// VGI515: described example queries (duckdb_functions().examples drops descriptions).
+			"vgi.example_queries": ExamplesJSON(queryExamples),
 		}),
-		Examples: []vgi.CatalogExample{
-			{
-				SQL: "SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name " +
-					"FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');",
-				Description: "Read the first 5 People entities from the public TripPin OData v4 service and pull a field out of the raw JSON.",
-			},
-			{
-				SQL: "SELECT count(*) FROM odata.main.odata_query(" +
-					"'https://services.odata.org/V4/Northwind/Northwind.svc', 'Customers', " +
-					"\"filter\" := 'Country eq ''Germany''', max_rows := 1000);",
-				Description: "Count the German customers in the public Northwind OData v4 sample, pushing the predicate down to the service via the OData $filter option.",
-			},
-		},
+		Examples: queryExamples,
 	}
 }
 
@@ -271,17 +252,9 @@ func (f *EntitySetsFunction) Metadata() vgi.FunctionMetadata {
 				`{"name":"name","type":"VARCHAR","description":"Name of an entity set advertised in the service document; pass it as the entity_set argument to odata_query."}` +
 				`]`,
 			// VGI515: described example queries (duckdb_functions().examples drops descriptions).
-			"vgi.example_queries": `[` +
-				`{"description":"Discover every entity set the TripPin OData service exposes (People, Airlines, Airports, ...).",` +
-				`"sql":"SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;"}` +
-				`]`,
+			"vgi.example_queries": ExamplesJSON(entitySetsExamples),
 		}),
-		Examples: []vgi.CatalogExample{
-			{
-				SQL:         "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;",
-				Description: "Discover every entity set the TripPin OData service exposes (People, Airlines, Airports, ...).",
-			},
-		},
+		Examples: entitySetsExamples,
 	}
 }
 
@@ -395,18 +368,9 @@ func (f *MetadataFunction) Metadata() vgi.FunctionMetadata {
 				`{"name":"type","type":"VARCHAR","description":"The property's EDM type, e.g. Edm.String, Edm.Int32, Edm.DateTimeOffset."}` +
 				`]`,
 			// VGI515: described example queries (duckdb_functions().examples drops descriptions).
-			"vgi.example_queries": `[` +
-				`{"description":"Inspect the properties and EDM types of the Person entity type from the service's $metadata (EDMX) document.",` +
-				`"sql":"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';"}` +
-				`]`,
+			"vgi.example_queries": ExamplesJSON(metadataExamples),
 		}),
-		Examples: []vgi.CatalogExample{
-			{
-				SQL: "SELECT property, type FROM odata.main.odata_metadata(" +
-					"'https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';",
-				Description: "Inspect the properties and EDM types of the Person entity type from the service's $metadata (EDMX) document.",
-			},
-		},
+		Examples: metadataExamples,
 	}
 }
 

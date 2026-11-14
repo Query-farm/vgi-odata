@@ -137,6 +137,28 @@ FROM odata.odata_query(
        version  := 'v4');
 ```
 
+### Combining functions
+
+The functions compose in one query. Here `odata_metadata` picks the numeric
+columns of the `Product` entity type and `odata_query` supplies the rows, so
+every numeric column of Northwind's `Products` is summarised without naming
+them:
+
+```sql
+WITH product_values AS (
+  SELECT m.property, m.type,
+         TRY_CAST(json_extract_string(p.entity, '$.' || m.property) AS DOUBLE) AS amount
+  FROM odata.main.odata_metadata('https://services.odata.org/V4/Northwind/Northwind.svc') AS m
+  CROSS JOIN odata.main.odata_query('https://services.odata.org/V4/Northwind/Northwind.svc', 'Products') AS p
+  WHERE m.entity_type = 'Product'
+    AND m.type IN ('Edm.Int16', 'Edm.Int32', 'Edm.Decimal', 'Edm.Double'))
+SELECT property, type, min(amount) AS min_value, max(amount) AS max_value,
+       round(avg(amount), 2) AS avg_value
+FROM product_values
+GROUP BY property, type
+ORDER BY property;
+```
+
 ## OData v2 vs v4
 
 The protocol comes in two JSON shapes; `version` selects which the worker

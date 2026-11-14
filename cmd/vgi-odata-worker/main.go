@@ -41,7 +41,8 @@ const odataExecutableExamples = `[
 // success_criteria, ...) live in the vgi-agent-tests.yaml sidecar at the repo
 // root, keyed by task name (VGI416). Both the analyst's query and the reference run against the live,
 // auth-free TripPin OData v4 service, so grading stays consistent even though
-// TripPin is a mutable sandbox. Together the tasks cover all three functions.
+// TripPin is a mutable sandbox. Together the tasks cover all three functions;
+// top-freight-customer-country composes two odata_query reads (Customers JOIN Orders).
 const odataAgentTestTasks = `[
   {
     "name": "list-entity-sets",
@@ -62,8 +63,29 @@ const odataAgentTestTasks = `[
   {
     "name": "list-known-public-services",
     "prompt": "This OData extension ships a built-in registry of well-known public OData services. List the name and service_url of every OData v4 service in that registry."
+  },
+  {
+    "name": "top-freight-customer-country",
+    "prompt": "Using the Northwind OData v4 service at https://services.odata.org/V4/Northwind/Northwind.svc, total the Freight of every order by the Country of the customer who placed it (the Country on the Customers entity set, matched to Orders by CustomerID). Which customer country has the highest total freight? Save your answer as a table named top_freight_country with exactly one row and one VARCHAR column named country."
   }
 ]`
+
+// schemaExamples is the main schema's vgi.example_queries: one single-function
+// example per function, then every composed example.
+var schemaExamples = append([]vgi.CatalogExample{
+	{
+		Description: "Discover every entity set the TripPin OData service exposes.",
+		SQL:         "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name",
+	},
+	{
+		Description: "Read the first 5 People entities and project a field out of the raw JSON.",
+		SQL:         "SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5')",
+	},
+	{
+		Description: "Inspect the Person entity type's properties and EDM types from $metadata.",
+		SQL:         "SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person'",
+	},
+}, odataworker.ComposedExamples...)
 
 func main() {
 	// Accept --http for HTTP transport and --unix for the AF_UNIX launcher
@@ -190,15 +212,9 @@ func main() {
 				"topic":    "odata-rest-api",
 				// VGI506/VGI515 representative example queries for the schema: a JSON
 				// list of {description, sql} objects (catalog-qualified SQL), so every
-				// example carries a human-readable description.
-				"vgi.example_queries": `[` +
-					`{"description":"Discover every entity set the TripPin OData service exposes.",` +
-					`"sql":"SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name"},` +
-					`{"description":"Read the first 5 People entities and project a field out of the raw JSON.",` +
-					`"sql":"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5')"},` +
-					`{"description":"Inspect the Person entity type's properties and EDM types from $metadata.",` +
-					`"sql":"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person'"}` +
-					`]`,
+				// example carries a human-readable description. Ends with the composed
+				// examples that combine several functions in one query.
+				"vgi.example_queries": odataworker.ExamplesJSON(schemaExamples),
 				"vgi.doc_llm": "The `main` schema reads OData v2/v4 REST services as SQL rows. Reach for it " +
 					"when data sits behind an OData endpoint (SAP, Dynamics, SharePoint, public open-data " +
 					"portals): discover what a service exposes from its service document, learn entity " +
