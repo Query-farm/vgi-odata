@@ -234,3 +234,7 @@ Written by [Query.Farm](https://query.farm).
 
 Copyright 2026 Query Farm LLC - https://query.farm
 
+
+## Executed SQL notebook
+
+[Paging caps and stock gaps](notebooks/README.md) uses a synthetic OData inventory to connect raw JSON typing, request paging, row caps and incomplete totals.

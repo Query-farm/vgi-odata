@@ -1,0 +1,7 @@
+{
+  "source": "Entirely invented inventory for this notebook. No real enterprise service, account, customer or observed stock levels.",
+  "ordering": "ProductID ascending",
+  "page_size": 3,
+  "null_semantics": "Nuts stock is unknown (JSON null), not zero.",
+  "target_semantics": "Target is an invented desired stock count, not a demand forecast."
+}

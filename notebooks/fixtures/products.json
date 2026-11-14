@@ -1,0 +1,58 @@
+[
+  {
+    "ProductID": 1,
+    "Name": "Bolts",
+    "Category": "Hardware",
+    "Stock": 24,
+    "Target": 20
+  },
+  {
+    "ProductID": 2,
+    "Name": "Nuts",
+    "Category": "Hardware",
+    "Stock": null,
+    "Target": 15
+  },
+  {
+    "ProductID": 3,
+    "Name": "Tape",
+    "Category": "Packing",
+    "Stock": 4,
+    "Target": 12
+  },
+  {
+    "ProductID": 4,
+    "Name": "Boxes",
+    "Category": "Packing",
+    "Stock": 18,
+    "Target": 10
+  },
+  {
+    "ProductID": 5,
+    "Name": "Gloves",
+    "Category": "Safety",
+    "Stock": 2,
+    "Target": 10
+  },
+  {
+    "ProductID": 6,
+    "Name": "Goggles",
+    "Category": "Safety",
+    "Stock": 0,
+    "Target": 6
+  },
+  {
+    "ProductID": 7,
+    "Name": "Labels",
+    "Category": "Packing",
+    "Stock": 1,
+    "Target": 9
+  },
+  {
+    "ProductID": 8,
+    "Name": "Washers",
+    "Category": "Hardware",
+    "Stock": 5,
+    "Target": 14
+  }
+]
