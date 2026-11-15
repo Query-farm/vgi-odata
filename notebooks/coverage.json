@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-release.json",
+      "sha256": "90057e6258ef787f3143c2f1fb372238b059858dd831517dc76e2a3fd820deb6",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:24:14.396951+00:00",
+        "catalog_sha256": "90057e6258ef787f3143c2f1fb372238b059858dd831517dc76e2a3fd820deb6",
+        "notes": "Complete three table functions and public service view; zero physical tables. Optional bearer authentication remains in the interface; no write APIs. Actual release exports reconciled. Full current source and dependency delta reviewed: metadata/composed examples/tests only, same registration, argument binding and implementation. Current-compatible examples are not current runtime execution."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "31f45b535d4cd944bbab8e2f799831659b969cb68ec4524db6bf4f8dd00b55ef",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:24:14.396951+00:00",
+        "catalog_sha256": "31f45b535d4cd944bbab8e2f799831659b969cb68ec4524db6bf4f8dd00b55ef",
+        "notes": "Complete three table functions and public service view; zero physical tables. Optional bearer authentication remains in the interface; no write APIs. Actual release exports reconciled. Full current source and dependency delta reviewed: metadata/composed examples/tests only, same registration, argument binding and implementation. Current-compatible examples are not current runtime execution."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_paging_caps_and_stock_gaps.ipynb",
+      "sha256": "7610a811b9866cd87e5840491abbc68f93976c6c05ecfdaf0911bc9ed580aa23",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "829af13d7aaf65c214af3849d7d88e8b1386ffb64b6914ce1f086d30b0e114bb"
+      }
+    },
+    {
+      "path": "02_a_status_flag_changes_the_population.ipynb",
+      "sha256": "75532f1c59c51648593e119dd4ee70624e33b7767fc22efa0bdba11dcccf40c4",
+      "execution": {
+        "path": "coverage/run-02.json",
+        "sha256": "2e532f17ce84a8ee2ddaab42d7e3b1f5d9bb847e2748abf5bd8785fbe8090c44"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "odata_public_services"
+      },
+      "notebook": "02_a_status_flag_changes_the_population.ipynb",
+      "sql": [
+        {
+          "cell": "registry-query",
+          "reference": "odata.main.odata_public_services"
+        }
+      ],
+      "narrative_cells": [
+        "connection-story"
+      ],
+      "result_cells": [
+        "service-selection"
+      ],
+      "interpretation_cells": [
+        "service-selection"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:24:14.396951+00:00",
+        "notebook_sha256": "75532f1c59c51648593e119dd4ee70624e33b7767fc22efa0bdba11dcccf40c4",
+        "catalog_sha256": [
+          "90057e6258ef787f3143c2f1fb372238b059858dd831517dc76e2a3fd820deb6",
+          "31f45b535d4cd944bbab8e2f799831659b969cb68ec4524db6bf4f8dd00b55ef"
+        ],
+        "purpose": "Select a protocol-compatible named sample service and use its URL in subsequent reads.",
+        "finding": "Six entries, four v4; Northwind V4 is selected uniquely. Registry membership is an offline convenience, not live health evidence."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "odata_entity_sets"
+      },
+      "notebook": "02_a_status_flag_changes_the_population.ipynb",
+      "sql": [
+        {
+          "cell": "materialize",
+          "reference": "odata.main.odata_entity_sets"
+        }
+      ],
+      "narrative_cells": [
+        "discovery-story"
+      ],
+      "result_cells": [
+        "schema-finding"
+      ],
+      "interpretation_cells": [
+        "schema-finding"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:24:14.396951+00:00",
+        "notebook_sha256": "75532f1c59c51648593e119dd4ee70624e33b7767fc22efa0bdba11dcccf40c4",
+        "catalog_sha256": [
+          "90057e6258ef787f3143c2f1fb372238b059858dd831517dc76e2a3fd820deb6",
+          "31f45b535d4cd944bbab8e2f799831659b969cb68ec4524db6bf4f8dd00b55ef"
+        ],
+        "purpose": "Confirm Products exists before interpreting its raw entity rows.",
+        "finding": "The actual service response contains exactly one Products entity set; its presence is asserted and discussed before typed analysis."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "odata_metadata"
+      },
+      "notebook": "02_a_status_flag_changes_the_population.ipynb",
+      "sql": [
+        {
+          "cell": "materialize",
+          "reference": "odata.main.odata_metadata"
+        }
+      ],
+      "narrative_cells": [
+        "discovery-story"
+      ],
+      "result_cells": [
+        "schema-finding"
+      ],
+      "interpretation_cells": [
+        "schema-finding"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:24:14.396951+00:00",
+        "notebook_sha256": "75532f1c59c51648593e119dd4ee70624e33b7767fc22efa0bdba11dcccf40c4",
+        "catalog_sha256": [
+          "90057e6258ef787f3143c2f1fb372238b059858dd831517dc76e2a3fd820deb6",
+          "31f45b535d4cd944bbab8e2f799831659b969cb68ec4524db6bf4f8dd00b55ef"
+        ],
+        "purpose": "Distinguish identifier, name, price, stock and Boolean status types before casting.",
+        "finding": "Five EDM roles validated exactly: Int32/String/Decimal/Int16/Boolean. Numeric stock and prices remain different measures; separate calls are not an atomic snapshot."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "odata_query"
+      },
+      "notebook": "02_a_status_flag_changes_the_population.ipynb",
+      "sql": [
+        {
+          "cell": "materialize",
+          "reference": "odata.main.odata_query"
+        }
+      ],
+      "narrative_cells": [
+        "population-story",
+        "selection-story"
+      ],
+      "result_cells": [
+        "status-finding",
+        "selection-finding",
+        "selected-chart"
+      ],
+      "interpretation_cells": [
+        "status-finding",
+        "selection-finding"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:24:14.396951+00:00",
+        "notebook_sha256": "75532f1c59c51648593e119dd4ee70624e33b7767fc22efa0bdba11dcccf40c4",
+        "catalog_sha256": [
+          "90057e6258ef787f3143c2f1fb372238b059858dd831517dc76e2a3fd820deb6",
+          "31f45b535d4cd944bbab8e2f799831659b969cb68ec4524db6bf4f8dd00b55ef"
+        ],
+        "purpose": "Hold twenty ordered source rows fixed while testing whether a status exclusion removes only zero-stock products.",
+        "finding": "Discontinued rows are IDs 5,9,17 with 29 stock units altogether; excluding them changes 20 to17 products and665 to636 units. Same source fingerprint and all values preserved; provider sample data is not enterprise inventory or a full catalog."
+      }
+    }
+  ]
+}

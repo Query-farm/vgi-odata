@@ -235,6 +235,6 @@ Written by [Query.Farm](https://query.farm).
 Copyright 2026 Query Farm LLC - https://query.farm
 
 
-## Executed SQL notebook
+## Executed SQL notebooks
 
-[Paging caps and stock gaps](notebooks/README.md) uses a synthetic OData inventory to connect raw JSON typing, request paging, row caps and incomplete totals.
+[Two executed SQL notebooks](notebooks/README.md) explore paging caps and stock gaps with an invented inventory, then use public Northwind sample data to show how a status filter changes the selected population. Both include release-based setup, Colab links and SVG charts.

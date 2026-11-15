@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "repository": "Query-farm/vgi-odata",
+  "revision": "1b151adf5547590302ee6e3a94c63d2daae5f15d",
+  "captured_at": "2026-11-15T01:16:46.417856+00:00",
+  "default_schema": "main",
+  "scope": "all_public_functions_and_tables",
+  "complete": true,
+  "objects": [
+    {
+      "schema": "main",
+      "name": "odata_entity_sets",
+      "kind": "function",
+      "signatures": [
+        "table(VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "optional",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "odata_metadata",
+      "kind": "function",
+      "signatures": [
+        "table(VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "optional",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "odata_query",
+      "kind": "function",
+      "signatures": [
+        "table(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, BIGINT, VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "optional",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "odata_public_services",
+      "kind": "table",
+      "signatures": [
+        "VIEW CREATE VIEW odata_public_services AS SELECT * FROM (SELECT * FROM (VALUES ('TripPin', 'https://services.odata.org/V4/TripPinService', 'v4', 'Microsoft''s canonical OData v4 reference service (People, Airlines, Airports, trips).'), ('TripPin RESTier', 'https://services.odata.org/TripPinRESTierService', 'v4', 'Read/write OData v4 TripPin variant hosted by the OData.org reference services.'), ('OData v4 Sample', 'https://services.odata.org/V4/OData/OData.svc', 'v4', 'The OData.org OData v4 sample service (Products, Categories, Suppliers).'), ('Northwind V4', 'https://services.odata.org/V4/Northwind/Northwind.svc', 'v4', 'The classic Northwind sales sample (Customers, Orders, Products) as OData v4.'), ('Northwind V3', 'https://services.odata.org/V3/Northwind/Northwind.svc', 'v3', 'The Northwind sales sample exposed as OData v3.'), ('Northwind V2', 'https://services.odata.org/V2/Northwind/Northwind.svc', 'v2', 'The Northwind sales sample as OData v2 (d.results/d.__next response shape).')) AS valueslist) AS t(\"name\", service_url, odata_version, description);"
+      ],
+      "authentication": "none",
+      "access": "read"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "coverage/release-to-current.patch",
+      "sha256": "aca1caf82acb015595a0502b1ff0f4503c83c6bb55616652bd1fe56111bf8c23",
+      "description": "Full source/dependency delta; example metadata and tests only"
+    },
+    {
+      "path": "coverage/current-source-review.json",
+      "sha256": "d5d6b1a7f4e6b6a326521c188619121bf899509db4988eaaf8373942ee923263",
+      "description": "Complete current registration and implementation correspondence review"
+    }
+  ]
+}

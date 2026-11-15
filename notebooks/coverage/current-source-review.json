@@ -1,0 +1,21 @@
+{
+  "release_revision": "45f6e2133bf8d6a480e8e2023a417c606905a4bf",
+  "current_revision": "1b151adf5547590302ee6e3a94c63d2daae5f15d",
+  "reviewed_at": "2026-11-15T01:16:46.417856+00:00",
+  "reviewer": "Codex /root",
+  "registration": "Register installs exactly three table functions and RegisterViews installs one static public-service view in main. No backing scan functions, tables, COPY or write surfaces. Each function accepts optional bearer authentication; those branches remain in denominator.",
+  "compatibility": "Complete release/current delta adds composed metadata/example SQL, associated tests and agent tasks only. Registration, implementation, argument binding, response schema, view definition and dependencies unchanged. Actual execution uses native released v0.4.0; current correspondence is reviewed, not exact-current runtime.",
+  "source_sha256": {
+    "cmd/vgi-odata-worker/main.go": "e6ce164d322cee96f8bd870ae510401504ca068f335d893b6766e1e4a0d226a5",
+    "go.mod": "2cd85b9a79cde6c17737c631efffd0acb84dc150c8725f5ba52f4c0ca79c2ccc",
+    "go.sum": "e0c3f138c22e96ef76385e8e68a7fd5839db9d909ebdea95c1391233c18b68a4",
+    "internal/odataworker/client.go": "4d8b6d52eefe6d01ddf859a11cd396d4be5fa2b236b042e90210fed58c689f83",
+    "internal/odataworker/client_test.go": "d160fa859a43d8314b9397c58f7fbc55c4b7d66f984222823498e328c1d61e12",
+    "internal/odataworker/examples.go": "9aef3bc2ba9e27b339647ca5ef40407bf165efe81d9f93aa3a65ee5830158017",
+    "internal/odataworker/examples_test.go": "34c1f0a988706f101944cc340e90c94ab4f2f74df1054d8db12f96fc185db014",
+    "internal/odataworker/functions.go": "80f77001c908d521efc191e7628954c44f5e9344c51f3c5435bda24353c11976",
+    "internal/odataworker/functions_test.go": "743b65830199948e02311f63b246b36092c3aecd1e5ab15dae9012338b80f735",
+    "internal/odataworker/meta.go": "c452a5776840ca36b723c27b666505579e218c56a651a1018ff9f4d3d1d77187",
+    "internal/odataworker/views.go": "693c5d99e43c6423aff1b712e32ce7df187d45dbfde807197d191ba5e1863cee"
+  }
+}

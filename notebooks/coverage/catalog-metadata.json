@@ -1,0 +1,47 @@
+{
+  "query": "SELECT * FROM duckdb_databases() WHERE database_name='odata'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "path",
+    "comment",
+    "tags",
+    "internal",
+    "type",
+    "readonly",
+    "encrypted",
+    "cipher",
+    "options"
+  ],
+  "rows": [
+    [
+      "odata",
+      22595,
+      null,
+      "Query OData v2/v4 services and return their entities as rows",
+      {
+        "source": "vgi-odata",
+        "vgi.agent_test_tasks": "[\n  {\n    \"name\": \"list-entity-sets\",\n    \"prompt\": \"Using the OData service at https://services.odata.org/V4/TripPinService, list the names of every entity set it exposes.\"\n  },\n  {\n    \"name\": \"people-named-russell\",\n    \"prompt\": \"Using the OData service at https://services.odata.org/V4/TripPinService, determine whether any Person in the People entity set has the FirstName 'Russell'. Answer with a single boolean value.\"\n  },\n  {\n    \"name\": \"count-all-people\",\n    \"prompt\": \"How many People entities does the TripPin OData service at https://services.odata.org/V4/TripPinService contain in total (across all pages)?\"\n  },\n  {\n    \"name\": \"person-type-properties\",\n    \"prompt\": \"What properties does the 'Person' entity type expose in the OData service at https://services.odata.org/V4/TripPinService, and what is each property's EDM type?\"\n  },\n  {\n    \"name\": \"list-known-public-services\",\n    \"prompt\": \"This OData extension ships a built-in registry of well-known public OData services. List the name and service_url of every OData v4 service in that registry.\"\n  }\n]",
+        "vgi.author": "Query.Farm",
+        "vgi.copyright": "Copyright 2026 Query Farm LLC - https://query.farm",
+        "vgi.doc_llm": "Read data from OData v2/v4 REST services directly in SQL. OData is the JSON/REST protocol behind Microsoft Dynamics 365 / Dataverse, SAP Gateway (S/4HANA, NetWeaver), and many enterprise APIs, so this is a generic OData reader rather than a vendor-specific connector. Use it to discover the entity sets a service exposes, read an entity set as rows of raw JSON following nextLink paging with `$filter`/`$select`/`$orderby`/`$top` pushdown, and inspect an entity type's properties and EDM types from its `$metadata`/EDMX document. Supports bearer-token auth and both v4 (value/@odata.nextLink) and v2 (d.results/d.__next) shapes.",
+        "vgi.doc_md": "# OData v2/v4 Reader for DuckDB\n\n**Query any OData v2 or v4 REST service directly in SQL** \u2014 discover its entity sets, read entities as rows, and inspect `$metadata`, all without writing a line of HTTP or JSON-parsing code.\n\nOData (the Open Data Protocol) is the JSON-over-REST standard behind a huge slice of enterprise data: Microsoft Dynamics 365 and Dataverse, SAP Gateway (S/4HANA and NetWeaver), Microsoft Graph, and countless in-house APIs all speak it. This extension turns those services into queryable tables, so analysts and data engineers can join live OData entities against the rest of their warehouse using plain SQL. It is a *generic* OData reader, not a vendor-specific connector, so the same three functions work against TripPin, Northwind, Dynamics, SAP, or any spec-compliant service.\n\nUnder the hood the worker speaks OData over HTTP using only the Go standard library \u2014 no heavyweight SDK \u2014 and streams results to DuckDB over Apache Arrow. It transparently follows server-driven paging (the v4 `@odata.nextLink` and the v2 `d.__next` cursor), pushes `$filter`, `$select`, `$orderby`, and `$top` down to the service so the server does the work, and understands both response shapes: v4 (`value` / `@odata.nextLink`) and v2 (`d.results` / `d.__next`). Protected services are supported via an optional bearer token argument.\n\nThe `main` schema exposes a small set of read functions covering the whole workflow: discovering the entity sets a service advertises in its service document, reading an entity set as rows of raw JSON (with `$filter`/`$select`/`$orderby`/`$top` pushdown, automatic nextLink paging, and a configurable row cap), and parsing an entity type's properties and EDM types from its `$metadata` (EDMX) document \u2014 namespace-agnostically across both EDM 3.0 (v2) and EDM 4.0 (v4). It also ships a browsable registry of well-known auth-free public services so you can start querying without a URL in hand. The catalog's executable examples and per-object example queries provide ready-to-run SQL, and the usual path is discover \u2192 inspect \u2192 read.\n\n## Learn more\n\n- [OData protocol homepage](https://www.odata.org)\n- [OData official documentation](https://www.odata.org/documentation/)\n- [Microsoft OData documentation](https://learn.microsoft.com/en-us/odata/)\n- [vgi-odata source code](https://github.com/Query-farm/vgi-odata)\n- [vgi-go SDK](https://github.com/Query-farm/vgi-go)",
+        "vgi.executable_examples": "[\n  {\n    \"description\": \"Discover the entity sets the TripPin OData service exposes.\",\n    \"sql\": \"SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name\"\n  },\n  {\n    \"description\": \"Read the first 5 People entities and pull a field out of the raw JSON.\",\n    \"sql\": \"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5') ORDER BY seq\"\n  },\n  {\n    \"description\": \"Inspect the properties and EDM types of the Person entity type from $metadata.\",\n    \"sql\": \"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person' ORDER BY property\"\n  }\n]",
+        "vgi.keywords": "[\"odata\",\"odata reader\",\"rest\",\"json\",\"http\",\"entity set\",\"$metadata\",\"edmx\",\"nextlink paging\",\"$filter\",\"$select\",\"$orderby\",\"$top\",\"dynamics 365\",\"dataverse\",\"sap gateway\",\"s/4hana\",\"netweaver\",\"enterprise api\",\"bearer token\"]",
+        "vgi.license": "MIT",
+        "vgi.subtitle": "Read OData v2/v4 REST services from SQL, with $filter pushdown, automatic paging and metadata discovery.",
+        "vgi.support_contact": "https://github.com/Query-farm/vgi-odata/issues",
+        "vgi.support_policy_url": "https://github.com/Query-farm/vgi-odata/blob/main/README.md",
+        "vgi.title": "OData v2/v4 Reader"
+      },
+      false,
+      "vgi",
+      false,
+      false,
+      null,
+      {
+        "location": "github-auto://Query-farm/vgi-odata@v0.4.0"
+      }
+    ]
+  ]
+}

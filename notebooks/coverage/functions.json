@@ -1,0 +1,169 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='odata' ORDER BY schema_name,function_name",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "odata",
+      "22595",
+      "main",
+      "odata_entity_sets",
+      null,
+      "table",
+      "List the entity sets exposed by an OData service (from its service document)",
+      null,
+      {
+        "vgi.category": "Discovery",
+        "vgi.doc_llm": "List the entity sets a given OData v2/v4 service exposes, read from its top-level service document (the JSON value[] array). Returns one row per entity-set name; feed any of those names as the entity_set argument to odata_query. Use this first to discover what a service offers (People, Airlines, Orders, ...) before reading data. Supports an optional bearer token for protected services.",
+        "vgi.doc_md": "## odata_entity_sets\n\nList the **entity sets** an OData service exposes.\n\n### Overview\n\nReads the service's top-level service document (the JSON `value[]` array) and returns one row per entity-set name. This is the natural first step when exploring an unfamiliar OData service.\n\n### Result\n\nOne row per entity set, with a single `name` column. Feed any returned `name` into `odata_query` as the `entity_set` argument to read its rows. See this function's example queries for ready-to-run SQL against the public TripPin service.\n\n### Notes\n\n- Works against OData v2 and v4 service documents.\n- Pass `token := '<bearer>'` for protected services; a NULL `service_url` yields zero rows.",
+        "vgi.example_queries": "[{\"description\":\"Discover every entity set the TripPin OData service exposes (People, Airlines, Airports, ...).\",\"sql\":\"SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;\"}]",
+        "vgi.keywords": "[\"odata\",\"entity sets\",\"service document\",\"discovery\",\"list\",\"catalog\",\"metadata\",\"rest\",\"json\",\"schema discovery\",\"dynamics\",\"sap gateway\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"name\",\"type\":\"VARCHAR\",\"description\":\"Name of an entity set advertised in the service document; pass it as the entity_set argument to odata_query.\"}]",
+        "vgi.title": "OData Entity-Set Catalog"
+      },
+      null,
+      [
+        "service_url",
+        "token"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22599,
+      [
+        "SELECT name FROM odata.main.odata_entity_sets('https://services.odata.org/V4/TripPinService') ORDER BY name;"
+      ],
+      null,
+      [
+        "odata",
+        "discovery"
+      ]
+    ],
+    [
+      "odata",
+      "22595",
+      "main",
+      "odata_metadata",
+      null,
+      "table",
+      "Parse an OData service's $metadata (EDMX XML); one row per entity-type property",
+      null,
+      {
+        "vgi.category": "Discovery",
+        "vgi.doc_llm": "Parse an OData service's $metadata (EDMX XML) document and return one row per entity-type property: the entity type name, the property name, and the property's EDM type (e.g. Edm.String, Edm.Int32, Edm.DateTimeOffset). Parsing is namespace-agnostic, so it handles both EDM 3.0 (OData v2) and EDM 4.0 (OData v4). Use it to learn the shape and column types of an entity before querying it. Supports an optional bearer token for protected services.",
+        "vgi.doc_md": "## odata_metadata\n\nInspect an OData service's **`$metadata` (EDMX) schema**.\n\n### Overview\n\nFetches and parses the service's `$metadata` (EDMX/CSDL) document and returns one row per entity-type property: the entity type name, the property name, and the property's EDM type. Use it to learn the shape and column types of an entity before querying it with `odata_query`.\n\n### Result\n\nOne row per entity-type property, with `entity_type`, `property`, and `type` (the property's EDM type) columns. Filter by `entity_type` to inspect a single type. See this function's example queries for ready-to-run SQL against the public TripPin service.\n\n### Notes\n\n- Parsing is namespace-agnostic, so both OData v2 (EDM 3.0) and v4 (EDM 4.0) documents are supported.\n- Pass `token := '<bearer>'` for protected services; a NULL `service_url` yields zero rows.",
+        "vgi.example_queries": "[{\"description\":\"Inspect the properties and EDM types of the Person entity type from the service's $metadata (EDMX) document.\",\"sql\":\"SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';\"}]",
+        "vgi.keywords": "[\"odata\",\"metadata\",\"edmx\",\"edm\",\"schema\",\"entity type\",\"property\",\"type\",\"csdl\",\"discovery\",\"introspection\",\"data dictionary\",\"dynamics\",\"sap gateway\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"entity_type\",\"type\":\"VARCHAR\",\"description\":\"Name of the EDM entity type the property belongs to.\"},{\"name\":\"property\",\"type\":\"VARCHAR\",\"description\":\"Name of a property declared on that entity type.\"},{\"name\":\"type\",\"type\":\"VARCHAR\",\"description\":\"The property's EDM type, e.g. Edm.String, Edm.Int32, Edm.DateTimeOffset.\"}]",
+        "vgi.title": "OData $metadata Schema Inspector"
+      },
+      null,
+      [
+        "service_url",
+        "token"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22600,
+      [
+        "SELECT property, type FROM odata.main.odata_metadata('https://services.odata.org/V4/TripPinService') WHERE entity_type = 'Person';"
+      ],
+      null,
+      [
+        "odata",
+        "discovery"
+      ]
+    ],
+    [
+      "odata",
+      "22595",
+      "main",
+      "odata_query",
+      null,
+      "table",
+      "Read an OData entity set; one row per entity (raw JSON), following nextLink paging",
+      null,
+      {
+        "vgi.category": "Query",
+        "vgi.doc_llm": "Read an OData v2/v4 entity set and return one row per entity as raw JSON, following @odata.nextLink (v4) or d.__next (v2) paging until exhausted or max_rows. Push $filter/$select/$orderby/$top down to the service as system query options, and authenticate with an optional bearer token. Project fields out of the JSON with DuckDB's json_extract / json_extract_string. Use to query entity data from Dynamics 365 / Dataverse, SAP Gateway, or any spec-compliant OData service.",
+        "vgi.doc_md": "## odata_query\n\nRead an **OData v2/v4 entity set** as rows of raw JSON.\n\n### Overview\n\nFetches an entity set from an OData service and returns one row per entity, following `@odata.nextLink` (v4) or `d.__next` (v2) paging automatically until the set is exhausted or `max_rows` is reached.\n\n### Result\n\nEach row has `seq` (0-based position of the entity across all fetched pages) and `entity` (the entity's raw JSON object text). Project individual fields with DuckDB's `json_extract` / `json_extract_string`. See this function's example queries for ready-to-run SQL against the public TripPin service.\n\n### Notes\n\n- Push `$filter`/`$select`/`$orderby`/`$top` down to the service with the matching named arguments; `\"filter\"` and `\"select\"` must be quoted (SQL keywords).\n- Pass `version := 'v2'` for OData v2 services and `token := '<bearer>'` for protected services.\n- A NULL `service_url` or `entity_set` yields zero rows rather than an error.",
+        "vgi.example_queries": "[{\"description\":\"Read the first 5 People entities from the public TripPin OData v4 service and pull a field out of the raw JSON.\",\"sql\":\"SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');\"},{\"description\":\"Count the German customers in the public Northwind OData v4 sample, pushing the predicate down to the service via the OData $filter option.\",\"sql\":\"SELECT count(*) FROM odata.main.odata_query('https://services.odata.org/V4/Northwind/Northwind.svc', 'Customers', \\\"filter\\\" := 'Country eq ''Germany''', max_rows := 1000);\"}]",
+        "vgi.keywords": "[\"odata\",\"odata query\",\"read entity set\",\"rest\",\"json\",\"http\",\"paging\",\"nextlink\",\"filter\",\"select\",\"orderby\",\"top\",\"dynamics\",\"dataverse\",\"sap gateway\",\"bearer token\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"seq\",\"type\":\"BIGINT\",\"description\":\"0-based position of the entity across all fetched pages.\"},{\"name\":\"entity\",\"type\":\"VARCHAR\",\"description\":\"The entity as its raw JSON object text; project fields with json_extract / json_extract_string.\"}]",
+        "vgi.title": "OData Entity-Set Reader"
+      },
+      null,
+      [
+        "service_url",
+        "entity_set",
+        "version",
+        "token",
+        "top",
+        "orderby",
+        "max_rows",
+        "select",
+        "filter"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22601,
+      [
+        "SELECT seq, json_extract_string(entity, '$.FirstName') AS first_name FROM odata.main.odata_query('https://services.odata.org/V4/TripPinService', 'People', top := '5');",
+        "SELECT count(*) FROM odata.main.odata_query('https://services.odata.org/V4/Northwind/Northwind.svc', 'Customers', \"filter\" := 'Country eq ''Germany''', max_rows := 1000);"
+      ],
+      null,
+      [
+        "odata",
+        "http"
+      ]
+    ]
+  ]
+}
