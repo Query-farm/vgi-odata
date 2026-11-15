@@ -1,0 +1,45 @@
+{
+  "source": "Actual complete public Northwind sample-service HTTP responses; provider-authored demonstration data, not real business inventory.",
+  "service_url": "https://services.odata.org/V4/Northwind/Northwind.svc",
+  "records": [
+    {
+      "route": "",
+      "query": {},
+      "accept": "application/json",
+      "file": "service.json",
+      "url": "https://services.odata.org/V4/Northwind/Northwind.svc",
+      "requested_at": "2026-11-15T01:12:33.347893+00:00",
+      "received_at": "2026-11-15T01:12:34.037241+00:00",
+      "status": 200,
+      "content_type": "application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8",
+      "sha256": "d3fa0b87af38ab0a6a1de7d14ee8fef30241db852626239e0dddd15016ebb1f1"
+    },
+    {
+      "route": "/$metadata",
+      "query": {},
+      "accept": "application/xml",
+      "file": "metadata.xml",
+      "url": "https://services.odata.org/V4/Northwind/Northwind.svc/$metadata",
+      "requested_at": "2026-11-15T01:12:34.037267+00:00",
+      "received_at": "2026-11-15T01:12:34.305371+00:00",
+      "status": 200,
+      "content_type": "application/xml;charset=utf-8",
+      "sha256": "81a48488cd2911f7254170da5403628db22127ea59124d6597d04c6af18d7702"
+    },
+    {
+      "route": "/Products",
+      "query": {
+        "$orderby": "ProductID",
+        "$top": "20"
+      },
+      "accept": "application/json",
+      "file": "products.json",
+      "url": "https://services.odata.org/V4/Northwind/Northwind.svc/Products?%24orderby=ProductID&%24top=20",
+      "requested_at": "2026-11-15T01:12:34.305473+00:00",
+      "received_at": "2026-11-15T01:12:34.593964+00:00",
+      "status": 200,
+      "content_type": "application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8",
+      "sha256": "8e4cf5525af4b95c10aea93bf03e23b848346e3e58021226a5634ad07435fe1f"
+    }
+  ]
+}
