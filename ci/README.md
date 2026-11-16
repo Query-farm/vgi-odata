@@ -1,45 +1,57 @@
 # CI: the vgi-odata worker integration suite
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs the Go unit
-tests and this repo's sqllogictest suite (`test/sql/*.test`) against the
-vgi-odata VGI worker through the **real DuckDB `vgi` extension** on every push /
-PR.
+tests and this repo's sqllogictest suite (`test/sql/*.test`) against the worker
+through the **real DuckDB `vgi` extension** on every push / PR. The harness,
+[`run-integration.sh`](run-integration.sh), is adapted from the vgi-starter's
+and is what `make test-sql` runs locally too.
+
+## Transport matrix
+
+The same suite runs once per transport (`SQL E2E (stdio|launch|http)`), chosen
+by `TRANSPORT`, which changes what `VGI_ODATA_WORKER` (the ATTACH `LOCATION`) is:
+
+| `TRANSPORT` | Worker                                              | `VGI_ODATA_WORKER`            |
+| ----------- | --------------------------------------------------- | ------------------ |
+| `stdio`     | DuckDB spawns the binary over stdin/stdout          | `/abs/path/worker` |
+| `launch`    | DuckDB starts it once on an AF_UNIX socket and pools connections | `launch:/abs/path/worker` |
+| `http`      | the script starts `worker --http` (prints `PORT:<n>`) | `http://127.0.0.1:<n>` |
+
+For `http` the script also loads `httpfs` after `LOAD vgi;` in the staged
+copies: the extension sends worker RPCs through DuckDB's HTTP client, which only
+exists once `httpfs` is loaded.
+
+## Backend
+
+The script builds `cmd/mockserver` (a v4 service document, a two-page `/People`
+entity set and a `/$metadata` EDMX doc), starts it on a free port and exports
+`VGI_ODATA_TEST_URL`.
 
 ## How it works (no C++ build)
 
-Rather than building the vgi DuckDB extension from source, CI drives a
-**prebuilt** standalone `haybarn-unittest` (the DuckDB/Haybarn sqllogictest
-runner, published in Haybarn's releases) and installs the **signed** `vgi`
-extension from the Haybarn community channel:
+1. `go build` the worker; install the pinned `haybarn-unittest` (the
+   DuckDB/Haybarn sqllogictest runner, `HAYBARN_VERSION`) with uv.
+2. Stage `test/sql/*.test`, rewriting any `require vgi` / `require <core ext>`
+   into explicit `LOAD`s (the standalone runner links no extensions).
+3. Warm the extension cache once: `FORCE INSTALL vgi FROM community` plus
+   httpfs / json / parquet from core.
+4. Run the staged suite in one `haybarn-unittest` invocation.
 
-1. **Build the worker** — `go build -o vgi-odata-worker ./cmd/vgi-odata-worker`.
-   The resulting binary is a self-contained stdio worker the extension can
-   spawn; `VGI_ODATA_WORKER` (an absolute path) is the ATTACH `LOCATION`.
-2. **Download the runner** — the `haybarn_unittest-linux-amd64.zip` asset from
-   the latest Haybarn release.
-3. **Preprocess** — [`preprocess-require.awk`](preprocess-require.awk) rewrites
-   any `require <ext>` gate into an explicit signed `INSTALL <ext> FROM
-   {community,core}; LOAD <ext>;`. This repo's tests already use an explicit
-   `LOAD vgi;` (haybarn silently *skips* `require vgi`), so the awk is mostly a
-   pass-through here; `require-env` and everything else pass through untouched.
-4. **Run** — [`run-integration.sh`](run-integration.sh) builds + starts the
-   repo's `mockserver` on a free port (exporting `VGI_ODATA_TEST_URL`), stages
-   the preprocessed tree, points `VGI_ODATA_WORKER` at the built worker binary,
-   warms the extension cache once (`INSTALL vgi FROM community`), then runs the
-   suite in a single `haybarn-unittest` invocation. Any failed assertion exits
-   non-zero and fails the job. The mock server is killed on exit.
+### Silent-skip guard (no fake passes)
+
+The runner **skips** (exit 0) any test whose error mentions `HTTP`, and exits 0
+when no test matched. The script passes a `--test-config` that disables
+error-skipping, fails when no test matched, and fails on any skip reason not
+listed in `EXPECTED_SKIP_REASONS` (or when fewer than `MIN_EXECUTED` files ran).
+
+The Docker image test (`docker-publish.yml`) reuses the script against the
+built image: `WORKER="docker run -i --rm IMG stdio"` for stdio, an
+`http://localhost:<port>` URL of a running container for http, with
+`SKIP_MOCK=1` and a narrowed `TEST_PATTERN`.
 
 ## Run it locally
 
 ```bash
-go build -o vgi-odata-worker ./cmd/vgi-odata-worker
-# point HAYBARN_UNITTEST at a haybarn-unittest binary (or a local DuckDB
-# `unittest` built with the vgi extension):
-HAYBARN_UNITTEST=/path/to/haybarn-unittest \
-VGI_ODATA_WORKER="$PWD/vgi-odata-worker" \
-  ci/run-integration.sh
+make test-sql                   # stdio, launch and http
+make test-sql TRANSPORTS=http   # one transport
 ```
-
-Or use the Makefile target (`make test-sql`), which builds both binaries,
-starts the mock server, and points the worker at `$(CURDIR)/vgi-odata-worker`
-with `haybarn-unittest` on `PATH`.

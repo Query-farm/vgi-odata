@@ -111,17 +111,19 @@ namespace-agnostically (matching on local element names) so it parses both EDM
 
 ## Mock-server E2E (how `make test-sql` works)
 
-Mirrors `vgi-grpc`'s start/stop pattern:
+`make test-sql` runs `ci/run-integration.sh` (adapted from the vgi-starter)
+once per transport — stdio, launch, http — exactly as CI's matrix does:
 
-1. `make build` compiles `vgi-odata-worker` **and** `mockserver`.
-2. `mockserver --addr 127.0.0.1:0` binds a free port and prints `PORT:<n>`; the
-   Makefile captures it.
-3. The Makefile exports `VGI_ODATA_WORKER` (the worker binary, used as the
-   ATTACH `LOCATION`) and `VGI_ODATA_TEST_URL=http://127.0.0.1:<n>` (read by the
-   `.test` files as the service root).
-4. `haybarn-unittest --keep-home --test-dir . "test/sql/*"` runs the suite.
-5. A shell `trap` kills the mock; the mock handles SIGTERM with
-   `http.Server.Shutdown`, so it exits 0 (clean `make`).
+1. `make build` compiles `vgi-odata-worker`; `make tools` installs the pinned
+   `haybarn-unittest` into `.tools`.
+2. The script builds `cmd/mockserver`, starts it on a free port (it prints
+   `PORT:<n>`) and exports `VGI_ODATA_TEST_URL=http://127.0.0.1:<n>` (read by
+   the `.test` files as the service root).
+3. It sets `VGI_ODATA_WORKER` (the ATTACH `LOCATION`) per transport: the binary
+   path, `launch:<path>`, or `http://127.0.0.1:<port>` of a `--http` worker.
+4. It runs the staged suite with error-skipping disabled, fails on any skip not
+   listed in `EXPECTED_SKIP_REASONS`, and kills the mock on exit (the mock
+   handles SIGTERM with `http.Server.Shutdown`).
 
 `cmd/mockserver` and the httptest unit tests share `internal/odatamock.New()`,
 which serves a v4 service document, a two-page `/People` set (4 entities total,

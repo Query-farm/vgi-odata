@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_call: {}
 
+env:
+  # The SQL test runner, pinned like the vgi-starter's (Makefile HAYBARN_VERSION).
+  HAYBARN_VERSION: "2.0.0rc11"
+
 jobs:
   build-test:
     name: Build, vet, fmt, unit tests
@@ -35,44 +39,19 @@ jobs:
       - name: Unit tests
         run: go test ./...
 
-  # Resolve the latest published haybarn release once, so the E2E job always
-  # tests the current version (and we never hardcode/pin it).
-  resolve-haybarn:
-    name: Resolve haybarn release
-    runs-on: ubuntu-latest
-    outputs:
-      release: ${{ steps.r.outputs.release }}
-    steps:
-      - id: r
-        run: |
-          REL=$(gh release list --repo Query-farm-haybarn/haybarn --limit 30 --json tagName \
-            --jq '[.[].tagName | select(startswith("haybarn-v2.0"))][0]')
-          test -n "$REL" || { echo "no haybarn-v2.0 release found" >&2; exit 1; }
-          echo "release=$REL" >> "$GITHUB_OUTPUT"
-          echo "Latest haybarn 2.0 release: $REL"
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-  # SQL end-to-end: run the sqllogictest suite (test/sql/*.test) against the
-  # built Go worker through the real signed `vgi` community DuckDB extension via
-  # a prebuilt standalone `haybarn-unittest` — no C++ build. See ci/README.md.
-  #
-  # Transport matrix: the same suite runs over each transport the vgi extension
-  # supports, selected by ci/run-integration.sh's TRANSPORT env var (which
-  # changes what the .test files ATTACH as the worker LOCATION):
-  #   subprocess  worker spawned over stdio (the binary path)
-  #   http        worker started with --http, LOCATION = http://127.0.0.1:<port>
-  #   unix        worker started with --unix <sock>, LOCATION = unix://<sock>
-  # The mock OData server is started for ALL transports (the worker's table
-  # functions still call it). See ci/README.md for the per-transport notes.
+  # SQL end-to-end: test/sql/*.test through the published haybarn-unittest
+  # runner and the signed community `vgi` extension, over each transport
+  # (stdio, launch = DuckDB-managed AF_UNIX socket, http). ci/run-integration.sh
+  # (adapted from the vgi-starter) starts the repo's mock backend and fails on
+  # any unexpected skip.
   integration:
     name: SQL E2E (${{ matrix.transport }})
-    needs: resolve-haybarn
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        transport: [subprocess, http, unix]
+        transport: [stdio, launch, http]
     steps:
       - uses: actions/checkout@v4
 
@@ -81,33 +60,22 @@ jobs:
           go-version: '1.26'
           cache: true
 
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+
       - name: Build the worker
         run: go build -o vgi-odata-worker ./cmd/vgi-odata-worker
 
-      - name: Download haybarn-unittest
+      - name: Install the SQL test runner
         run: |
-          gh release download "$HAYBARN_RELEASE" \
-            --repo Query-farm-haybarn/haybarn \
-            --pattern 'haybarn_unittest-linux-amd64.zip' \
-            --output haybarn-unittest.zip --clobber
-          mkdir -p hb && unzip -o -q haybarn-unittest.zip -d hb
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HAYBARN_RELEASE: ${{ needs.resolve-haybarn.outputs.release }}
+          uv venv .tools
+          uv pip install -p .tools "haybarn-unittest==${HAYBARN_VERSION}"
 
-      - name: Resolve runner + worker paths
+      - name: Run test/sql over ${{ matrix.transport }}
         run: |
-          # Absolute paths: run-integration.sh cd's into a staging dir before
-          # invoking the runner, so relative paths would not resolve.
-          UNITTEST="$PWD/$(find hb -name 'haybarn-unittest' -type f | head -1)"
-          chmod +x "$UNITTEST"
-          echo "HAYBARN_UNITTEST=$UNITTEST" >> "$GITHUB_ENV"
-          echo "VGI_ODATA_WORKER=$PWD/vgi-odata-worker" >> "$GITHUB_ENV"
-
-      - name: Run extension integration suite (${{ matrix.transport }})
-        run: ci/run-integration.sh
-        env:
-          TRANSPORT: ${{ matrix.transport }}
+          WORKER="$PWD/vgi-odata-worker" HAYBARN_UNITTEST="$PWD/.tools/bin/haybarn-unittest" \
+            TRANSPORT=${{ matrix.transport }} ci/run-integration.sh
 
   # Metadata quality: build the worker, then run the vgi-lint metadata-quality
   # linter against it. The linter force-installs the signed `vgi` community

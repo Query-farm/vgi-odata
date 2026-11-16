@@ -17,3 +17,6 @@ coverage.out
 # Editor / OS cruft
 .DS_Store
 /.tmpbin/
+
+# SQL test runner (make tools)
+/.tools/

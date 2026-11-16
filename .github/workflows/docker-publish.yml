@@ -105,9 +105,9 @@ jobs:
         echo "::endgroup::"
 
         echo "::group::stdio entrypoint smoke (one file, cold container per ATTACH)"
-        TRANSPORT=subprocess SKIP_MOCK=1 \
+        TRANSPORT=stdio SKIP_MOCK=1 \
           TEST_PATTERN="test/sql/odata_query.test" \
-          VGI_ODATA_WORKER="docker run -i --rm --network odata-net $CITEST_IMAGE stdio" \
+          WORKER="docker run -i --rm --network odata-net $CITEST_IMAGE stdio" \
           ci/run-integration.sh
         echo "::endgroup::"
 
@@ -115,5 +115,5 @@ jobs:
         CID=$(docker run -d --network odata-net -p 18000:8000 "$CITEST_IMAGE")
         trap 'docker rm -f "$CID" odata-mock >/dev/null 2>&1 || true; docker network rm odata-net >/dev/null 2>&1 || true' EXIT
         for _ in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:18000/health && break; sleep 1; done
-        TRANSPORT=http SKIP_MOCK=1 VGI_ODATA_WORKER="http://localhost:18000" ci/run-integration.sh
+        TRANSPORT=http SKIP_MOCK=1 WORKER="http://localhost:18000" ci/run-integration.sh
         echo "::endgroup::"
