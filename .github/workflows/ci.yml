@@ -9,7 +9,7 @@ on:
 
 env:
   # The SQL test runner, pinned like the vgi-starter's (Makefile HAYBARN_VERSION).
-  HAYBARN_VERSION: "2.0.0rc11"
+  HAYBARN_VERSION: "2.0.1rc3"
 
 jobs:
   build-test:
